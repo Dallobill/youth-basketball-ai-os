@@ -1,0 +1,16 @@
+{
+  "name": "youth-basketball-ai-os-starter",
+  "version": "0.1.0",
+  "description": "Starter backend for a youth basketball development operating system",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
+  }
+}

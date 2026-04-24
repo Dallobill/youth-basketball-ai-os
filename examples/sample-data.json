@@ -1,0 +1,41 @@
+{
+  "organization": {
+    "name": "Northeast Bucket Getters"
+  },
+  "season": {
+    "name": "Spring-Summer 2026",
+    "startDate": "2026-03-01",
+    "endDate": "2026-07-31"
+  },
+  "team": {
+    "name": "NBG 15U",
+    "ageGroup": "15U",
+    "level": "AAU"
+  },
+  "player": {
+    "firstName": "Jaylen",
+    "lastName": "Smith",
+    "graduationYear": 2029,
+    "position": "Guard",
+    "jerseyNumber": "2",
+    "dominantHand": "Right",
+    "guardianName": "Michelle Smith",
+    "guardianEmail": "parent@example.com"
+  },
+  "evaluation": {
+    "evaluationType": "game",
+    "ballHandling": 6,
+    "finishing": 5,
+    "shooting": 6,
+    "passingDecision": 5,
+    "defenseOnBall": 8,
+    "defenseHelp": 5,
+    "rebounding": 4,
+    "communication": 6,
+    "motorEffort": 8,
+    "basketballIq": 5,
+    "strengths": "Pressures the ball and competes.",
+    "priorities": "Early help-side reads and better finishing balance.",
+    "notes": "Late rotations on weak side. Rushed on two drives. Strong defensive energy."
+  }
+}
