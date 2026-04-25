@@ -1,6 +1,11 @@
 import { formatPlayerName, getAverageScore, getPriorityLabel } from '../utils';
 
-export default function RosterTable({ players, latestEvaluationsByPlayer, selectedPlayerId, onSelect }) {
+export default function RosterTable({
+  players,
+  latestEvaluationsByPlayer,
+  selectedPlayerId,
+  onSelect
+}) {
   return (
     <div className="panel">
       <div className="panel-header">
@@ -28,20 +33,27 @@ export default function RosterTable({ players, latestEvaluationsByPlayer, select
               return (
                 <tr
                   key={player.id}
-                  className={selectedPlayerId === player.id ? 'selected-row' : ''}
+                  className={
+                    selectedPlayerId === player.id ? 'selected-row' : ''
+                  }
                   onClick={() => onSelect(player.id)}
                 >
                   <td>
                     <div className="player-cell">
                       <strong>{formatPlayerName(player)}</strong>
-                      <span>#{player.jerseyNumber || '—'} · {player.graduationYear || '—'}</span>
+                      <span>
+                        #{player.jerseyNumber || '—'} ·{' '}
+                        {player.graduationYear || '—'}
+                      </span>
                     </div>
                   </td>
                   <td>{player.position || '—'}</td>
                   <td>{latest?.evaluationType || 'No entry'}</td>
                   <td>{avgScore ? avgScore.toFixed(1) : '—'}</td>
                   <td>
-                    <span className={`status-badge ${getPriorityLabel(avgScore).toLowerCase().replace(/\s+/g, '-')}`}>
+                    <span
+                      className={`status-badge ${getPriorityLabel(avgScore).toLowerCase().replace(/\s+/g, '-')}`}
+                    >
                       {getPriorityLabel(avgScore)}
                     </span>
                   </td>

@@ -144,7 +144,8 @@ export const demoData = {
       basketballIq: 5,
       strengths: 'Pressures the ball and competes every possession.',
       priorities: 'Needs earlier weak-side reads and more balanced finishes.',
-      notes: 'Late rotations on weak side. Rushed on two drives. Strong defensive energy.'
+      notes:
+        'Late rotations on weak side. Rushed on two drives. Strong defensive energy.'
     },
     {
       id: 'eval_2',
@@ -184,7 +185,8 @@ export const demoData = {
       basketballIq: 6,
       strengths: 'Impacts the game on the glass and rotates well.',
       priorities: 'Needs cleaner handles and stronger outlet decisions.',
-      notes: 'Still managing lower-leg soreness. Should stay on a monitored workload.'
+      notes:
+        'Still managing lower-leg soreness. Should stay on a monitored workload.'
     },
     {
       id: 'eval_4',

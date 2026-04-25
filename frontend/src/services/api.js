@@ -1,5 +1,6 @@
-import { demoData } from '../data/demoData';
+import { demoData } from '../data/demoData.js';
 
+const API_BASE = import.meta.env?.VITE_API_URL || 'http://localhost:3001/api';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const LOGIN_URL = import.meta.env.VITE_LOGIN_URL || '/login';
 const AUTH_TOKEN_STORAGE_KEY = 'ybos.auth.token';
@@ -13,7 +14,7 @@ export class UnauthorizedError extends Error {
   }
 }
 
-function averageScore(evaluation) {
+export function averageScore(evaluation) {
   const metrics = [
     evaluation.ballHandling,
     evaluation.finishing,
@@ -31,7 +32,7 @@ function averageScore(evaluation) {
   return metrics.reduce((sum, value) => sum + value, 0) / metrics.length;
 }
 
-function buildDashboardFromDemo() {
+export function buildDashboardFromDemo() {
   const totalPlayers = demoData.players.length;
   const totalTeams = demoData.teams.length;
   const recentEvaluations = demoData.evaluations
@@ -39,10 +40,14 @@ function buildDashboardFromDemo() {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5)
     .map((evaluation) => {
-      const player = demoData.players.find((entry) => entry.id === evaluation.playerId);
+      const player = demoData.players.find(
+        (entry) => entry.id === evaluation.playerId
+      );
       return {
         ...evaluation,
-        playerName: player ? `${player.firstName} ${player.lastName}` : 'Player evaluation'
+        playerName: player
+          ? `${player.firstName} ${player.lastName}`
+          : 'Player evaluation'
       };
     });
 
@@ -78,6 +83,32 @@ function buildDashboardFromDemo() {
   };
 }
 
+export function normalizeTeam(team) {
+  return {
+    ...team,
+    ageGroup: team.age_group || team.ageGroup,
+    rosterCount: Number(team.roster_count ?? team.rosterCount ?? 0)
+  };
+}
+
+export function mapDashboardData({ teams, players }) {
+  const normalizedTeams = teams.map(normalizeTeam);
+
+  return {
+    organizationName: 'Youth Basketball AI OS',
+    totals: {
+      totalTeams: normalizedTeams.length,
+      totalPlayers: players.length,
+      recentEvaluations: 0,
+      aiReports: 0
+    },
+    teams: normalizedTeams,
+    recentEvaluations: [],
+    playersNeedingReview: [],
+    recentAiReports: [],
+    players
+  };
+}
 function getPlayersForTeam(teamId) {
   return demoData.players.filter((player) => player.teamId === teamId);
 }
@@ -173,6 +204,11 @@ export async function getDashboardData() {
       throw new Error('Falling back to demo data');
     }
 
+    const [teams, players] = await Promise.all([
+      teamsResponse.json(),
+      playersResponse.json()
+    ]);
+    return mapDashboardData({ teams, players });
     const [teams, players, aiReportsPayload] = await Promise.all([
       teamsResponse.json(),
       playersResponse.json(),
@@ -238,8 +274,12 @@ export async function getPlayerEvaluations(playerId) {
       ballHandling: Number(evaluation.ball_handling ?? evaluation.ballHandling),
       finishing: Number(evaluation.finishing),
       shooting: Number(evaluation.shooting),
-      passingDecision: Number(evaluation.passing_decision ?? evaluation.passingDecision),
-      defenseOnBall: Number(evaluation.defense_on_ball ?? evaluation.defenseOnBall),
+      passingDecision: Number(
+        evaluation.passing_decision ?? evaluation.passingDecision
+      ),
+      defenseOnBall: Number(
+        evaluation.defense_on_ball ?? evaluation.defenseOnBall
+      ),
       defenseHelp: Number(evaluation.defense_help ?? evaluation.defenseHelp),
       rebounding: Number(evaluation.rebounding),
       communication: Number(evaluation.communication),
@@ -268,16 +308,36 @@ export async function createEvaluation(payload) {
       ...evaluation,
       createdAt: evaluation.created_at || evaluation.createdAt,
       evaluationType: evaluation.evaluation_type || evaluation.evaluationType,
-      ballHandling: Number(evaluation.ball_handling ?? evaluation.ballHandling ?? payload.ballHandling),
+      ballHandling: Number(
+        evaluation.ball_handling ??
+          evaluation.ballHandling ??
+          payload.ballHandling
+      ),
       finishing: Number(evaluation.finishing ?? payload.finishing),
       shooting: Number(evaluation.shooting ?? payload.shooting),
-      passingDecision: Number(evaluation.passing_decision ?? evaluation.passingDecision ?? payload.passingDecision),
-      defenseOnBall: Number(evaluation.defense_on_ball ?? evaluation.defenseOnBall ?? payload.defenseOnBall),
-      defenseHelp: Number(evaluation.defense_help ?? evaluation.defenseHelp ?? payload.defenseHelp),
+      passingDecision: Number(
+        evaluation.passing_decision ??
+          evaluation.passingDecision ??
+          payload.passingDecision
+      ),
+      defenseOnBall: Number(
+        evaluation.defense_on_ball ??
+          evaluation.defenseOnBall ??
+          payload.defenseOnBall
+      ),
+      defenseHelp: Number(
+        evaluation.defense_help ?? evaluation.defenseHelp ?? payload.defenseHelp
+      ),
       rebounding: Number(evaluation.rebounding ?? payload.rebounding),
       communication: Number(evaluation.communication ?? payload.communication),
-      motorEffort: Number(evaluation.motor_effort ?? evaluation.motorEffort ?? payload.motorEffort),
-      basketballIq: Number(evaluation.basketball_iq ?? evaluation.basketballIq ?? payload.basketballIq)
+      motorEffort: Number(
+        evaluation.motor_effort ?? evaluation.motorEffort ?? payload.motorEffort
+      ),
+      basketballIq: Number(
+        evaluation.basketball_iq ??
+          evaluation.basketballIq ??
+          payload.basketballIq
+      )
     };
   } catch (error) {
     if (error instanceof UnauthorizedError) throw error;
@@ -307,7 +367,10 @@ export async function generatePlayerSummary(payload) {
     return {
       headline: 'Player development summary',
       strengths: payload.strengths || ['Competes hard', 'Responds to coaching'],
-      developmentPriorities: payload.priorities || ['Sharper reads', 'Better finishing balance'],
+      developmentPriorities: payload.priorities || [
+        'Sharper reads',
+        'Better finishing balance'
+      ],
       coachFocus:
         'Emphasize early reads, lower-body balance, and calm decision-making on drives.',
       playerMessage:

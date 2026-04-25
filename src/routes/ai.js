@@ -1,6 +1,10 @@
 const express = require('express');
-const { buildPlayerSummary, buildTeamSummary, buildPracticePlan, buildParentUpdate } = require('../services/aiService');
-const { createAiReport, getAiReports } = require('../db');
+const {
+  buildPlayerSummary,
+  buildTeamSummary,
+  buildPracticePlan,
+  buildParentUpdate
+} = require('../services/aiService');
 
 const router = express.Router();
 

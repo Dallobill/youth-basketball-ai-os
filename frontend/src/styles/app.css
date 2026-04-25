@@ -1,5 +1,11 @@
 :root {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   color: #e5eefc;
   background: #081120;
   line-height: 1.5;
@@ -34,8 +40,16 @@ body,
 
 body {
   background:
-    radial-gradient(circle at top left, rgba(14, 165, 233, 0.15), transparent 30%),
-    radial-gradient(circle at top right, rgba(245, 158, 11, 0.12), transparent 30%),
+    radial-gradient(
+      circle at top left,
+      rgba(14, 165, 233, 0.15),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(245, 158, 11, 0.12),
+      transparent 30%
+    ),
     var(--bg);
   color: var(--text);
 }
@@ -79,7 +93,11 @@ p {
   gap: 24px;
   align-items: flex-start;
   padding: 28px;
-  background: linear-gradient(180deg, rgba(17, 28, 49, 0.95), rgba(17, 28, 49, 0.8));
+  background: linear-gradient(
+    180deg,
+    rgba(17, 28, 49, 0.95),
+    rgba(17, 28, 49, 0.8)
+  );
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   margin-bottom: 20px;
@@ -147,7 +165,11 @@ p {
 
 .team-pill.active {
   border-color: rgba(245, 158, 11, 0.35);
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.18), rgba(17, 28, 49, 0.95));
+  background: linear-gradient(
+    180deg,
+    rgba(245, 158, 11, 0.18),
+    rgba(17, 28, 49, 0.95)
+  );
 }
 
 .stats-grid {

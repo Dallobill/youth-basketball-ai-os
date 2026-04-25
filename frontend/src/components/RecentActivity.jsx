@@ -15,10 +15,14 @@ export default function RecentActivity({ evaluations, aiReports }) {
             evaluations.map((evaluation) => (
               <div key={evaluation.id} className="stack-row">
                 <div>
-                  <strong>{evaluation.playerName || 'Player evaluation'}</strong>
+                  <strong>
+                    {evaluation.playerName || 'Player evaluation'}
+                  </strong>
                   <p>{evaluation.evaluationType}</p>
                 </div>
-                <span>{formatDate(evaluation.createdAt || evaluation.created_at)}</span>
+                <span>
+                  {formatDate(evaluation.createdAt || evaluation.created_at)}
+                </span>
               </div>
             ))
           ) : (
@@ -43,7 +47,9 @@ export default function RecentActivity({ evaluations, aiReports }) {
               </div>
             ))
           ) : (
-            <p className="muted-text">AI outputs will appear here after coach submissions.</p>
+            <p className="muted-text">
+              AI outputs will appear here after coach submissions.
+            </p>
           )}
         </div>
       </div>

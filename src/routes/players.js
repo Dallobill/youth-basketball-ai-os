@@ -26,25 +26,9 @@ router.get('/', async (req, res) => {
       return res.json(result.rows);
     }
 
-    let result;
-    if (req.auth.organizationIds.length > 0) {
-      result = await query(
-        'SELECT * FROM players WHERE organization_id = ANY($1::uuid[]) ORDER BY last_name, first_name',
-        [req.auth.organizationIds]
-      );
-    } else if (req.auth.teamIds.length > 0) {
-      result = await query(
-        `SELECT DISTINCT p.*
-         FROM players p
-         INNER JOIN player_team_memberships ptm ON ptm.player_id = p.id
-         WHERE ptm.team_id = ANY($1::uuid[]) AND ptm.is_active = TRUE
-         ORDER BY p.last_name, p.first_name`,
-        [req.auth.teamIds]
-      );
-    } else {
-      return res.json([]);
-    }
-
+    const result = await query(
+      'SELECT * FROM players ORDER BY last_name, first_name'
+    );
     return res.json(result.rows);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -106,12 +90,9 @@ router.post('/', requireWriteRole, async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const hasAccess = await canAccessPlayer(req, req.params.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: 'Player access denied' });
-    }
-
-    const result = await query('SELECT * FROM players WHERE id = $1', [req.params.id]);
+    const result = await query('SELECT * FROM players WHERE id = $1', [
+      req.params.id
+    ]);
     if (!result.rows.length) {
       return res.status(404).json({ error: 'Player not found' });
     }

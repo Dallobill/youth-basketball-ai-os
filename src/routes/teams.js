@@ -47,12 +47,9 @@ router.post('/', requireWriteRole, async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const hasAccess = await canAccessTeam(req, req.params.id);
-    if (!hasAccess) {
-      return res.status(403).json({ error: 'Team access denied' });
-    }
-
-    const result = await query('SELECT * FROM teams WHERE id = $1', [req.params.id]);
+    const result = await query('SELECT * FROM teams WHERE id = $1', [
+      req.params.id
+    ]);
     if (!result.rows.length) {
       return res.status(404).json({ error: 'Team not found' });
     }
