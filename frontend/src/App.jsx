@@ -111,7 +111,7 @@ export default function App() {
             playerId: payload.playerId,
             playerName: selected ? formatPlayerName(selected) : 'Player evaluation'
           },
-          ...(current.recentAiReports || [])
+          ...(current.recentEvaluations || [])
         ].slice(0, 6);
 
         const newRecentAiReports = [
@@ -120,8 +120,8 @@ export default function App() {
             headline: summary.headline,
             content: summary.coachFocus || summary.playerMessage || ''
           },
-          ...(current.rentAiReports || [])
-        ].slide(0, 6);
+          ...(current.recentAiReports || [])
+        ].slice(0, 6);
 
         return {
           ...current,
