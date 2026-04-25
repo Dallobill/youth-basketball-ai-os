@@ -77,23 +77,41 @@ function getEvaluationsForPlayer(playerId) {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
+function normalizeAiReport(report) {
+  return {
+    ...report,
+    reportType: report.report_type || report.reportType,
+    teamId: report.team_id || report.teamId || null,
+    playerId: report.player_id || report.playerId || null,
+    createdAt: report.created_at || report.createdAt,
+    headline: report.headline || 'AI report',
+    content: report.content || ''
+  };
+}
+
 export async function getDashboardData() {
   try {
-    const [teamsResponse, playersResponse] = await Promise.all([
+    const [teamsResponse, playersResponse, aiReportsResponse] = await Promise.all([
       fetch(`${API_BASE}/teams`),
-      fetch(`${API_BASE}/players`)
+      fetch(`${API_BASE}/players`),
+      fetch(`${API_BASE}/ai/reports?page=1&pageSize=6`)
     ]);
 
     if (!teamsResponse.ok || !playersResponse.ok) {
       throw new Error('Falling back to demo data');
     }
 
-    const [teams, players] = await Promise.all([teamsResponse.json(), playersResponse.json()]);
+    const [teams, players, aiReportsPayload] = await Promise.all([
+      teamsResponse.json(),
+      playersResponse.json(),
+      aiReportsResponse.ok ? aiReportsResponse.json() : Promise.resolve({ data: [] })
+    ]);
     const normalizedTeams = teams.map((team) => ({
       ...team,
       ageGroup: team.age_group || team.ageGroup,
       rosterCount: Number(team.roster_count ?? team.rosterCount ?? 0)
     }));
+    const recentAiReports = Array.isArray(aiReportsPayload?.data) ? aiReportsPayload.data.map(normalizeAiReport) : [];
 
     return {
       organizationName: 'Youth Basketball AI OS',
@@ -101,12 +119,12 @@ export async function getDashboardData() {
         totalTeams: normalizedTeams.length,
         totalPlayers: players.length,
         recentEvaluations: 0,
-        aiReports: 0
+        aiReports: Number(aiReportsPayload?.pagination?.total ?? recentAiReports.length)
       },
       teams: normalizedTeams,
       recentEvaluations: [],
       playersNeedingReview: [],
-      recentAiReports: [],
+      recentAiReports,
       players
     };
   } catch (error) {
