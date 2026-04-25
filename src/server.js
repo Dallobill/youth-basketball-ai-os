@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { query } = require('./db');
+const { authRequired } = require('./middleware/auth');
 const playersRouter = require('./routes/players');
 const teamsRouter = require('./routes/teams');
 const evaluationsRouter = require('./routes/evaluations');
@@ -22,6 +23,7 @@ app.get('/health', async (req, res) => {
   }
 });
 
+app.use('/api', authRequired);
 app.use('/api/players', playersRouter);
 app.use('/api/teams', teamsRouter);
 app.use('/api/evaluations', evaluationsRouter);

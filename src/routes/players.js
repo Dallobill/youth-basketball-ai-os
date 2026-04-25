@@ -1,5 +1,6 @@
 const express = require('express');
 const { query } = require('../db');
+const { requireWriteRole, canAccessOrganization, canAccessPlayer, canAccessTeam } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -8,6 +9,11 @@ router.get('/', async (req, res) => {
     const { teamId } = req.query;
 
     if (teamId) {
+      const teamAllowed = await canAccessTeam(req, teamId);
+      if (!teamAllowed) {
+        return res.status(403).json({ error: 'Team access denied' });
+      }
+
       const result = await query(
         `SELECT p.*
          FROM players p
@@ -20,14 +26,32 @@ router.get('/', async (req, res) => {
       return res.json(result.rows);
     }
 
-    const result = await query('SELECT * FROM players ORDER BY last_name, first_name');
+    let result;
+    if (req.auth.organizationIds.length > 0) {
+      result = await query(
+        'SELECT * FROM players WHERE organization_id = ANY($1::uuid[]) ORDER BY last_name, first_name',
+        [req.auth.organizationIds]
+      );
+    } else if (req.auth.teamIds.length > 0) {
+      result = await query(
+        `SELECT DISTINCT p.*
+         FROM players p
+         INNER JOIN player_team_memberships ptm ON ptm.player_id = p.id
+         WHERE ptm.team_id = ANY($1::uuid[]) AND ptm.is_active = TRUE
+         ORDER BY p.last_name, p.first_name`,
+        [req.auth.teamIds]
+      );
+    } else {
+      return res.json([]);
+    }
+
     return res.json(result.rows);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireWriteRole, async (req, res) => {
   try {
     const {
       organizationId,
@@ -43,6 +67,11 @@ router.post('/', async (req, res) => {
       guardianPhone,
       notes
     } = req.body;
+
+    const hasAccess = await canAccessOrganization(req, organizationId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Organization access denied' });
+    }
 
     const sql = `
       INSERT INTO players (
@@ -77,6 +106,11 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
+    const hasAccess = await canAccessPlayer(req, req.params.id);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Player access denied' });
+    }
+
     const result = await query('SELECT * FROM players WHERE id = $1', [req.params.id]);
     if (!result.rows.length) {
       return res.status(404).json({ error: 'Player not found' });
