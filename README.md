@@ -54,8 +54,25 @@ Create a `.env` file:
 PORT=3001
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME
 OPENAI_API_KEY=your_key_here
+# Option A: local JWT verification
 JWT_SECRET=replace_me
+# Option B: Supabase JWT verification (shared JWT secret)
+SUPABASE_JWT_SECRET=your_supabase_jwt_secret
 ```
+
+
+## Auth and roles
+Backend now requires a bearer token for every `/api/*` request.
+
+Supported role claims:
+- `director`
+- `coach`
+- `assistant`
+- `parent` (read-only for now)
+
+Write endpoints (for example `POST /api/players`, `POST /api/teams`, `POST /api/evaluations`) require one of: `director`, `coach`, or `assistant`. Read endpoints are scoped by organization/team membership from JWT claims (`organizationId(s)`, `teamId(s)` in root/app_metadata/user_metadata).
+
+For Supabase auth, pass the access token from the client and set `SUPABASE_JWT_SECRET` in backend `.env` (Project Settings → API → JWT Secret).
 
 ## Frontend local setup
 ```bash
@@ -67,7 +84,18 @@ npm run dev
 Optional frontend env:
 ```env
 VITE_API_URL=http://localhost:3001/api
+# Optional local bootstrap token
+VITE_AUTH_TOKEN=<jwt-access-token>
+# Where the app redirects after 401
+VITE_LOGIN_URL=http://localhost:5173/login
 ```
+
+Frontend auth bootstrap order:
+1. `access_token` in URL hash (e.g. OAuth/Supabase redirect).
+2. `localStorage` key `ybos.auth.token`.
+3. `VITE_AUTH_TOKEN` fallback for local development.
+
+The API client attaches `Authorization: Bearer <token>` on every request. If API returns `401`, UI renders an unauthorized state and redirects to `VITE_LOGIN_URL`.
 
 The frontend includes a **demo-data fallback**, so the UI still works even if the backend or database is not connected yet.
 

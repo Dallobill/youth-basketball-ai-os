@@ -6,9 +6,12 @@ import RosterTable from './components/RosterTable.jsx';
 import StatCard from './components/StatCard.jsx';
 import TeamSelector from './components/TeamSelector.jsx';
 import {
+  UnauthorizedError,
+  bootstrapAuth,
   createEvaluation,
   generatePlayerSummary,
   getDashboardData,
+  getLoginUrl,
   getPlayerEvaluations,
   getTeamRoster
 } from './services/api.js';
@@ -23,14 +26,38 @@ export default function App() {
   const [playerEvaluations, setPlayerEvaluations] = useState([]);
   const [aiSummary, setAiSummary] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  useEffect(() => {
+    bootstrapAuth();
+  }, []);
+
+  function handleUnauthorized(error) {
+    if (!(error instanceof UnauthorizedError)) {
+      return false;
+    }
+
+    const loginUrl = getLoginUrl();
+    setAuthError(error.message || 'Unauthorized. Please sign in.');
+
+    if (typeof window !== 'undefined' && loginUrl) {
+      window.location.assign(loginUrl);
+    }
+
+    return true;
+  }
 
   useEffect(() => {
     async function loadDashboard() {
-      const data = await getDashboardData();
-      setDashboard(data);
+      try {
+        const data = await getDashboardData();
+        setDashboard(data);
 
-      const firstTeamId = data.teams[0]?.id || '';
-      setActiveTeamId(firstTeamId);
+        const firstTeamId = data.teams[0]?.id || '';
+        setActiveTeamId(firstTeamId);
+      } catch (error) {
+        handleUnauthorized(error);
+      }
     }
 
     loadDashboard();
@@ -39,12 +66,17 @@ export default function App() {
   useEffect(() => {
     async function loadRoster() {
       if (!activeTeamId) return;
-      const roster = await getTeamRoster(activeTeamId);
-      setPlayers(roster);
-      setSelectedPlayerId((current) => {
-        const existsOnTeam = roster.some((player) => player.id === current);
-        return existsOnTeam ? current : roster[0]?.id || '';
-      });
+
+      try {
+        const roster = await getTeamRoster(activeTeamId);
+        setPlayers(roster);
+        setSelectedPlayerId((current) => {
+          const existsOnTeam = roster.some((player) => player.id === current);
+          return existsOnTeam ? current : roster[0]?.id || '';
+        });
+      } catch (error) {
+        handleUnauthorized(error);
+      }
     }
 
     loadRoster();
@@ -56,8 +88,13 @@ export default function App() {
         setPlayerEvaluations([]);
         return;
       }
-      const evaluations = await getPlayerEvaluations(selectedPlayerId);
-      setPlayerEvaluations(evaluations);
+
+      try {
+        const evaluations = await getPlayerEvaluations(selectedPlayerId);
+        setPlayerEvaluations(evaluations);
+      } catch (error) {
+        handleUnauthorized(error);
+      }
     }
 
     loadEvaluations();
@@ -113,15 +150,40 @@ export default function App() {
 
       setAiSummary(summary);
 
-      setDashboard((current) =>
-        reduceDashboardAfterSave(current, {
-          saved,
-          payload,
-          selected,
-          summary,
-          nowMs: Date.now()
-        })
-      );
+      setDashboard((current) => {
+        if (!current) return current;
+
+        const newRecentEvaluations = [
+          {
+            ...saved,
+            playerId: payload.playerId,
+            playerName: selected ? formatPlayerName(selected) : 'Player evaluation'
+          },
+          ...(current.recentEvaluations || [])
+        ].slice(0, 6);
+
+        const newRecentAiReports = [
+          {
+            id: `ai_${Date.now()}`,
+            headline: summary.headline,
+            content: summary.coachFocus || summary.playerMessage || ''
+          },
+          ...(current.recentAiReports || [])
+        ].slice(0, 6);
+
+        return {
+          ...current,
+          recentEvaluations: newRecentEvaluations,
+          recentAiReports: newRecentAiReports,
+          totals: {
+            ...current.totals,
+            recentEvaluations: (current.totals?.recentEvaluations || 0) + 1,
+            aiReports: (current.totals?.aiReports || 0) + 1
+          }
+        };
+      });
+    } catch (error) {
+      handleUnauthorized(error);
     } finally {
       setIsSaving(false);
     }
@@ -137,6 +199,16 @@ export default function App() {
       .sort((a, b) => (a.averageScore ?? 10) - (b.averageScore ?? 10))
       .slice(0, 4);
   }, [players, latestEvaluationsByPlayer]);
+
+  if (authError) {
+    return (
+      <div className="loading-shell">
+        <strong>Unauthorized</strong>
+        <p>{authError}</p>
+        <p>Redirecting to login shell...</p>
+      </div>
+    );
+  }
 
   if (!dashboard) {
     return <div className="loading-shell">Loading dashboard...</div>;

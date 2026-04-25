@@ -1,5 +1,6 @@
 const express = require('express');
 const { query } = require('../db');
+const { requireWriteRole, canAccessOrganization, canAccessPlayer, canAccessTeam } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -8,6 +9,11 @@ router.get('/', async (req, res) => {
     const { teamId } = req.query;
 
     if (teamId) {
+      const teamAllowed = await canAccessTeam(req, teamId);
+      if (!teamAllowed) {
+        return res.status(403).json({ error: 'Team access denied' });
+      }
+
       const result = await query(
         `SELECT p.*
          FROM players p
@@ -29,7 +35,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireWriteRole, async (req, res) => {
   try {
     const {
       organizationId,
@@ -45,6 +51,11 @@ router.post('/', async (req, res) => {
       guardianPhone,
       notes
     } = req.body;
+
+    const hasAccess = await canAccessOrganization(req, organizationId);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Organization access denied' });
+    }
 
     const sql = `
       INSERT INTO players (
