@@ -103,7 +103,9 @@ export default function EvaluationForm({
         <div>
           <div className="eyebrow">Evaluation form</div>
           <h2>Coach entry</h2>
-          <p className="muted-text">Complete in under two minutes after practice or game.</p>
+          <p className="muted-text">
+            Complete in under two minutes after practice or game.
+          </p>
         </div>
       </div>
 
@@ -128,7 +130,9 @@ export default function EvaluationForm({
             <span>Entry type</span>
             <select
               value={form.evaluationType}
-              onChange={(event) => updateField('evaluationType', event.target.value)}
+              onChange={(event) =>
+                updateField('evaluationType', event.target.value)
+              }
             >
               <option value="practice">Practice</option>
               <option value="game">Game</option>
@@ -205,7 +209,9 @@ export default function EvaluationForm({
           className="primary-button"
           disabled={isSaving || !form.playerId}
         >
-          {isSaving ? 'Saving evaluation...' : 'Save evaluation + generate AI summary'}
+          {isSaving
+            ? 'Saving evaluation...'
+            : 'Save evaluation + generate AI summary'}
         </button>
       </form>
     </div>

@@ -20,7 +20,9 @@ router.get('/', async (req, res) => {
       return res.json(result.rows);
     }
 
-    const result = await query('SELECT * FROM players ORDER BY last_name, first_name');
+    const result = await query(
+      'SELECT * FROM players ORDER BY last_name, first_name'
+    );
     return res.json(result.rows);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -77,7 +79,9 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const result = await query('SELECT * FROM players WHERE id = $1', [req.params.id]);
+    const result = await query('SELECT * FROM players WHERE id = $1', [
+      req.params.id
+    ]);
     if (!result.rows.length) {
       return res.status(404).json({ error: 'Player not found' });
     }

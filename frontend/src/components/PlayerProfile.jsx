@@ -1,4 +1,9 @@
-import { formatDate, formatPlayerName, getAverageScore, getPriorityLabel } from '../utils';
+import {
+  formatDate,
+  formatPlayerName,
+  getAverageScore,
+  getPriorityLabel
+} from '../utils';
 
 const metrics = [
   ['Ball handling', 'ballHandling'],
@@ -23,7 +28,10 @@ export default function PlayerProfile({ player, evaluations, aiSummary }) {
         <div>
           <div className="eyebrow">Player profile</div>
           <h2>Select a player</h2>
-          <p className="muted-text">Choose a player from the roster to review their latest development record.</p>
+          <p className="muted-text">
+            Choose a player from the roster to review their latest development
+            record.
+          </p>
         </div>
       </div>
     );
@@ -36,7 +44,8 @@ export default function PlayerProfile({ player, evaluations, aiSummary }) {
           <div className="eyebrow">Player profile</div>
           <h2>{formatPlayerName(player)}</h2>
           <p className="muted-text">
-            {player.position || 'Player'} · #{player.jerseyNumber || '—'} · {player.dominantHand || '—'} hand
+            {player.position || 'Player'} · #{player.jerseyNumber || '—'} ·{' '}
+            {player.dominantHand || '—'} hand
           </p>
         </div>
         <div className="profile-score">
@@ -49,14 +58,21 @@ export default function PlayerProfile({ player, evaluations, aiSummary }) {
       <div className="profile-grid">
         <div className="sub-panel">
           <h3>Latest evaluation</h3>
-          <p className="muted-text">{latest ? `${latest.evaluationType} · ${formatDate(latest.createdAt || latest.created_at)}` : 'No evaluations yet'}</p>
+          <p className="muted-text">
+            {latest
+              ? `${latest.evaluationType} · ${formatDate(latest.createdAt || latest.created_at)}`
+              : 'No evaluations yet'}
+          </p>
           {latest ? (
             <div className="metric-list">
               {metrics.map(([label, key]) => (
                 <div key={key} className="metric-row">
                   <span>{label}</span>
                   <div className="metric-bar-wrap">
-                    <div className="metric-bar" style={{ width: `${(Number(latest[key]) || 0) * 10}%` }} />
+                    <div
+                      className="metric-bar"
+                      style={{ width: `${(Number(latest[key]) || 0) * 10}%` }}
+                    />
                   </div>
                   <strong>{latest[key] ?? '—'}</strong>
                 </div>
@@ -91,7 +107,10 @@ export default function PlayerProfile({ player, evaluations, aiSummary }) {
           </div>
           <div>
             <label>Coach focus</label>
-            <p>{aiSummary?.coachFocus || 'Generate a summary after saving an evaluation.'}</p>
+            <p>
+              {aiSummary?.coachFocus ||
+                'Generate a summary after saving an evaluation.'}
+            </p>
           </div>
           <div>
             <label>Player message</label>

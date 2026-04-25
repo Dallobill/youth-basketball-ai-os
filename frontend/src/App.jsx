@@ -13,6 +13,7 @@ import {
   getTeamRoster
 } from './services/api.js';
 import { formatPlayerName, getAverageScore } from './utils.js';
+import { reduceDashboardAfterSave } from './state/dashboard.js';
 
 export default function App() {
   const [dashboard, setDashboard] = useState(null);
@@ -67,7 +68,10 @@ export default function App() {
     if (!players.length) return map;
 
     players.forEach((player) => {
-      const playerHistory = dashboard?.recentEvaluations?.filter((entry) => entry.playerId === player.id) || [];
+      const playerHistory =
+        dashboard?.recentEvaluations?.filter(
+          (entry) => entry.playerId === player.id
+        ) || [];
       if (player.id === selectedPlayerId && playerEvaluations[0]) {
         map[player.id] = playerEvaluations[0];
       } else if (playerHistory[0]) {
@@ -76,9 +80,16 @@ export default function App() {
     });
 
     return map;
-  }, [dashboard?.recentEvaluations, playerEvaluations, players, selectedPlayerId]);
+  }, [
+    dashboard?.recentEvaluations,
+    playerEvaluations,
+    players,
+    selectedPlayerId
+  ]);
 
-  const selectedPlayer = players.find((player) => player.id === selectedPlayerId);
+  const selectedPlayer = players.find(
+    (player) => player.id === selectedPlayerId
+  );
   const activeTeam = dashboard?.teams.find((team) => team.id === activeTeamId);
 
   async function handleSaveEvaluation(payload) {
@@ -87,7 +98,7 @@ export default function App() {
     try {
       const saved = await createEvaluation(payload);
       const selected = players.find((player) => player.id === payload.playerId);
-      
+
       const summary = await generatePlayerSummary({
         headline: `${selected ? formatPlayerName(selected) : 'Player'} development summary`,
         strengths: payload.strengths ? [payload.strengths] : [],
@@ -102,38 +113,15 @@ export default function App() {
 
       setAiSummary(summary);
 
-      setDashboard((current) => {
-        if(!current) return current;
-
-        const newRecentEvaluations = [
-          {
-            ...saved,
-            playerId: payload.playerId,
-            playerName: selected ? formatPlayerName(selected) : 'Player evaluation'
-          },
-          ...(current.recentEvaluations || [])
-        ].slice(0, 6);
-
-        const newRecentAiReports = [
-          {
-            id: `ai_${Date.now()}`,
-            headline: summary.headline,
-            content: summary.coachFocus || summary.playerMessage || ''
-          },
-          ...(current.recentAiReports || [])
-        ].slice(0, 6);
-
-        return {
-          ...current,
-          recentEvaluations: newRecentEvaluations,
-          recentAiReports: newRecentAiReports,
-          totals: {
-            ...current.totals,
-            recentEvaluations: (current.totals?.recentEvaluations || 0) + 1,
-            aiReports: (current.totals?.aiReports || 0) + 1
-          }
-        };
-      });
+      setDashboard((current) =>
+        reduceDashboardAfterSave(current, {
+          saved,
+          payload,
+          selected,
+          summary,
+          nowMs: Date.now()
+        })
+      );
     } finally {
       setIsSaving(false);
     }
@@ -160,21 +148,46 @@ export default function App() {
         <div>
           <div className="eyebrow">Youth Basketball AI OS</div>
           <h1>{dashboard.organizationName}</h1>
-          <p className="muted-text">Coach dashboard, player evaluations, and AI-assisted development workflow.</p>
+          <p className="muted-text">
+            Coach dashboard, player evaluations, and AI-assisted development
+            workflow.
+          </p>
         </div>
         <div className="topbar-aside">
           <span className="topbar-chip">Live MVP</span>
-          <span className="topbar-chip secondary">{activeTeam?.name || 'Select team'}</span>
+          <span className="topbar-chip secondary">
+            {activeTeam?.name || 'Select team'}
+          </span>
         </div>
       </header>
 
-      <TeamSelector teams={dashboard.teams} activeTeamId={activeTeamId} onChange={setActiveTeamId} />
+      <TeamSelector
+        teams={dashboard.teams}
+        activeTeamId={activeTeamId}
+        onChange={setActiveTeamId}
+      />
 
       <section className="stats-grid">
-        <StatCard label="Teams" value={dashboard.totals.totalTeams} detail="Active programs tracked" />
-        <StatCard label="Players" value={dashboard.totals.totalPlayers} detail="Athletes in the system" />
-        <StatCard label="Evaluations" value={dashboard.totals.recentEvaluations} detail="Coach entries logged" />
-        <StatCard label="AI outputs" value={dashboard.totals.aiReports} detail="Summaries and reports generated" />
+        <StatCard
+          label="Teams"
+          value={dashboard.totals.totalTeams}
+          detail="Active programs tracked"
+        />
+        <StatCard
+          label="Players"
+          value={dashboard.totals.totalPlayers}
+          detail="Athletes in the system"
+        />
+        <StatCard
+          label="Evaluations"
+          value={dashboard.totals.recentEvaluations}
+          detail="Coach entries logged"
+        />
+        <StatCard
+          label="AI outputs"
+          value={dashboard.totals.aiReports}
+          detail="Summaries and reports generated"
+        />
       </section>
 
       <section className="content-grid">
@@ -188,12 +201,22 @@ export default function App() {
             </div>
             <div className="attention-list">
               {reviewPlayers.map((player) => (
-                <button key={player.id} type="button" className="attention-card" onClick={() => setSelectedPlayerId(player.id)}>
+                <button
+                  key={player.id}
+                  type="button"
+                  className="attention-card"
+                  onClick={() => setSelectedPlayerId(player.id)}
+                >
                   <div>
                     <strong>{formatPlayerName(player)}</strong>
-                    <p>{player.position || 'Player'} · #{player.jerseyNumber || '—'}</p>
+                    <p>
+                      {player.position || 'Player'} · #
+                      {player.jerseyNumber || '—'}
+                    </p>
                   </div>
-                  <span>{player.averageScore ? player.averageScore.toFixed(1) : '—'}</span>
+                  <span>
+                    {player.averageScore ? player.averageScore.toFixed(1) : '—'}
+                  </span>
                 </button>
               ))}
             </div>
@@ -206,11 +229,18 @@ export default function App() {
             onSelect={setSelectedPlayerId}
           />
 
-          <RecentActivity evaluations={dashboard.recentEvaluations || []} aiReports={dashboard.recentAiReports || []} />
+          <RecentActivity
+            evaluations={dashboard.recentEvaluations || []}
+            aiReports={dashboard.recentAiReports || []}
+          />
         </div>
 
         <div className="right-column">
-          <PlayerProfile player={selectedPlayer} evaluations={playerEvaluations} aiSummary={aiSummary} />
+          <PlayerProfile
+            player={selectedPlayer}
+            evaluations={playerEvaluations}
+            aiSummary={aiSummary}
+          />
           <EvaluationForm
             players={players}
             activeTeamId={activeTeamId}

@@ -12,7 +12,9 @@ export function getAverageScore(evaluation) {
     evaluation.communication,
     evaluation.motorEffort,
     evaluation.basketballIq
-  ].map((value) => Number(value)).filter((value) => !Number.isNaN(value));
+  ]
+    .map((value) => Number(value))
+    .filter((value) => !Number.isNaN(value));
 
   if (!metrics.length) return null;
   return metrics.reduce((sum, value) => sum + value, 0) / metrics.length;
