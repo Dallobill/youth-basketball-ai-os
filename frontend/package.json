@@ -16,4 +16,22 @@
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.2"
   }
+  {
+    "scripts": {
+      "dev": "node --watch src/server.js",
+      "lint": "eslint .",
+      "format": "prettier --write .",
+      "format:check": "prettier --check .",
+      "test": "node --test"
+    }
+  }
+  {
+    "scripts": {
+      "dev": "vite",
+      "lint": "eslint .",
+      "format": "prettier --write .",
+      "format:check": "prettier --check .",
+      "test": "vitest run"
+    }
+  }
 }
