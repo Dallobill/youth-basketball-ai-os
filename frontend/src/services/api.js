@@ -1,6 +1,17 @@
 import { demoData } from '../data/demoData';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const LOGIN_URL = import.meta.env.VITE_LOGIN_URL || '/login';
+const AUTH_TOKEN_STORAGE_KEY = 'ybos.auth.token';
+
+let authToken = null;
+
+export class UnauthorizedError extends Error {
+  constructor(message = 'Unauthorized') {
+    super(message);
+    this.name = 'UnauthorizedError';
+  }
+}
 
 function averageScore(evaluation) {
   const metrics = [
@@ -77,12 +88,82 @@ function getEvaluationsForPlayer(playerId) {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
+export function bootstrapAuth() {
+  if (typeof window === 'undefined') return null;
+
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const hashToken = hashParams.get('access_token');
+
+  if (hashToken) {
+    setAuthToken(hashToken);
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+    return hashToken;
+  }
+
+  const savedToken = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  if (savedToken) {
+    authToken = savedToken;
+    return savedToken;
+  }
+
+  const envToken = import.meta.env.VITE_AUTH_TOKEN;
+  if (envToken) {
+    setAuthToken(envToken);
+    return envToken;
+  }
+
+  return null;
+}
+
+export function setAuthToken(token) {
+  authToken = token;
+
+  if (typeof window === 'undefined') return;
+
+  if (token) {
+    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  } else {
+    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  }
+}
+
+export function clearAuthToken() {
+  setAuthToken(null);
+}
+
+export function getLoginUrl() {
+  return LOGIN_URL;
+}
+
+async function apiRequest(path, options = {}) {
+  if (!authToken) {
+    bootstrapAuth();
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers
+  });
+
+  if (response.status === 401) {
+    throw new UnauthorizedError('Session expired or missing auth token');
+  }
+
+  return response;
+}
+
 export async function getDashboardData() {
   try {
-    const [teamsResponse, playersResponse] = await Promise.all([
-      fetch(`${API_BASE}/teams`),
-      fetch(`${API_BASE}/players`)
-    ]);
+    const [teamsResponse, playersResponse] = await Promise.all([apiRequest('/teams'), apiRequest('/players')]);
 
     if (!teamsResponse.ok || !playersResponse.ok) {
       throw new Error('Falling back to demo data');
@@ -110,13 +191,14 @@ export async function getDashboardData() {
       players
     };
   } catch (error) {
+    if (error instanceof UnauthorizedError) throw error;
     return buildDashboardFromDemo();
   }
 }
 
 export async function getTeamRoster(teamId) {
   try {
-    const response = await fetch(`${API_BASE}/players?teamId=${teamId}`);
+    const response = await apiRequest(`/players?teamId=${teamId}`);
     if (!response.ok) throw new Error('Team roster unavailable');
     const roster = await response.json();
     return roster.map((player) => ({
@@ -130,13 +212,14 @@ export async function getTeamRoster(teamId) {
       injuryStatus: player.injury_status || player.injuryStatus
     }));
   } catch (error) {
+    if (error instanceof UnauthorizedError) throw error;
     return getPlayersForTeam(teamId);
   }
 }
 
 export async function getPlayerEvaluations(playerId) {
   try {
-    const response = await fetch(`${API_BASE}/evaluations/player/${playerId}`);
+    const response = await apiRequest(`/evaluations/player/${playerId}`);
     if (!response.ok) throw new Error('Evaluations unavailable');
     const evaluations = await response.json();
     return evaluations.map((evaluation) => ({
@@ -155,15 +238,15 @@ export async function getPlayerEvaluations(playerId) {
       basketballIq: Number(evaluation.basketball_iq ?? evaluation.basketballIq)
     }));
   } catch (error) {
+    if (error instanceof UnauthorizedError) throw error;
     return getEvaluationsForPlayer(playerId);
   }
 }
 
 export async function createEvaluation(payload) {
   try {
-    const response = await fetch(`${API_BASE}/evaluations`, {
+    const response = await apiRequest('/evaluations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
@@ -188,6 +271,8 @@ export async function createEvaluation(payload) {
       basketballIq: Number(evaluation.basketball_iq ?? evaluation.basketballIq ?? payload.basketballIq)
     };
   } catch (error) {
+    if (error instanceof UnauthorizedError) throw error;
+
     const localEvaluation = {
       id: `local_${Date.now()}`,
       ...payload,
@@ -201,15 +286,15 @@ export async function createEvaluation(payload) {
 
 export async function generatePlayerSummary(payload) {
   try {
-    const response = await fetch(`${API_BASE}/ai/player-summary`, {
+    const response = await apiRequest('/ai/player-summary', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
     if (!response.ok) throw new Error('Could not generate summary');
     return await response.json();
   } catch (error) {
+    if (error instanceof UnauthorizedError) throw error;
     return {
       headline: 'Player development summary',
       strengths: payload.strengths || ['Competes hard', 'Responds to coaching'],

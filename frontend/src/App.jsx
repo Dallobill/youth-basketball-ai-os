@@ -6,9 +6,12 @@ import RosterTable from './components/RosterTable.jsx';
 import StatCard from './components/StatCard.jsx';
 import TeamSelector from './components/TeamSelector.jsx';
 import {
+  UnauthorizedError,
+  bootstrapAuth,
   createEvaluation,
   generatePlayerSummary,
   getDashboardData,
+  getLoginUrl,
   getPlayerEvaluations,
   getTeamRoster
 } from './services/api.js';
@@ -22,14 +25,38 @@ export default function App() {
   const [playerEvaluations, setPlayerEvaluations] = useState([]);
   const [aiSummary, setAiSummary] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  useEffect(() => {
+    bootstrapAuth();
+  }, []);
+
+  function handleUnauthorized(error) {
+    if (!(error instanceof UnauthorizedError)) {
+      return false;
+    }
+
+    const loginUrl = getLoginUrl();
+    setAuthError(error.message || 'Unauthorized. Please sign in.');
+
+    if (typeof window !== 'undefined' && loginUrl) {
+      window.location.assign(loginUrl);
+    }
+
+    return true;
+  }
 
   useEffect(() => {
     async function loadDashboard() {
-      const data = await getDashboardData();
-      setDashboard(data);
+      try {
+        const data = await getDashboardData();
+        setDashboard(data);
 
-      const firstTeamId = data.teams[0]?.id || '';
-      setActiveTeamId(firstTeamId);
+        const firstTeamId = data.teams[0]?.id || '';
+        setActiveTeamId(firstTeamId);
+      } catch (error) {
+        handleUnauthorized(error);
+      }
     }
 
     loadDashboard();
@@ -38,12 +65,17 @@ export default function App() {
   useEffect(() => {
     async function loadRoster() {
       if (!activeTeamId) return;
-      const roster = await getTeamRoster(activeTeamId);
-      setPlayers(roster);
-      setSelectedPlayerId((current) => {
-        const existsOnTeam = roster.some((player) => player.id === current);
-        return existsOnTeam ? current : roster[0]?.id || '';
-      });
+
+      try {
+        const roster = await getTeamRoster(activeTeamId);
+        setPlayers(roster);
+        setSelectedPlayerId((current) => {
+          const existsOnTeam = roster.some((player) => player.id === current);
+          return existsOnTeam ? current : roster[0]?.id || '';
+        });
+      } catch (error) {
+        handleUnauthorized(error);
+      }
     }
 
     loadRoster();
@@ -55,8 +87,13 @@ export default function App() {
         setPlayerEvaluations([]);
         return;
       }
-      const evaluations = await getPlayerEvaluations(selectedPlayerId);
-      setPlayerEvaluations(evaluations);
+
+      try {
+        const evaluations = await getPlayerEvaluations(selectedPlayerId);
+        setPlayerEvaluations(evaluations);
+      } catch (error) {
+        handleUnauthorized(error);
+      }
     }
 
     loadEvaluations();
@@ -87,7 +124,7 @@ export default function App() {
     try {
       const saved = await createEvaluation(payload);
       const selected = players.find((player) => player.id === payload.playerId);
-      
+
       const summary = await generatePlayerSummary({
         headline: `${selected ? formatPlayerName(selected) : 'Player'} development summary`,
         strengths: payload.strengths ? [payload.strengths] : [],
@@ -103,7 +140,7 @@ export default function App() {
       setAiSummary(summary);
 
       setDashboard((current) => {
-        if(!current) return current;
+        if (!current) return current;
 
         const newRecentEvaluations = [
           {
@@ -134,6 +171,8 @@ export default function App() {
           }
         };
       });
+    } catch (error) {
+      handleUnauthorized(error);
     } finally {
       setIsSaving(false);
     }
@@ -149,6 +188,16 @@ export default function App() {
       .sort((a, b) => (a.averageScore ?? 10) - (b.averageScore ?? 10))
       .slice(0, 4);
   }, [players, latestEvaluationsByPlayer]);
+
+  if (authError) {
+    return (
+      <div className="loading-shell">
+        <strong>Unauthorized</strong>
+        <p>{authError}</p>
+        <p>Redirecting to login shell...</p>
+      </div>
+    );
+  }
 
   if (!dashboard) {
     return <div className="loading-shell">Loading dashboard...</div>;

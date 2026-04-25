@@ -1,9 +1,10 @@
 const express = require('express');
 const { query } = require('../db');
+const { requireWriteRole, canAccessTeam, canAccessPlayer } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.post('/', async (req, res) => {
+router.post('/', requireWriteRole, async (req, res) => {
   try {
     const {
       teamId,
@@ -26,6 +27,15 @@ router.post('/', async (req, res) => {
       priorities,
       notes
     } = req.body;
+
+    const [teamAllowed, playerAllowed] = await Promise.all([
+      canAccessTeam(req, teamId),
+      canAccessPlayer(req, playerId)
+    ]);
+
+    if (!teamAllowed || !playerAllowed) {
+      return res.status(403).json({ error: 'Evaluation access denied' });
+    }
 
     const result = await query(
       `INSERT INTO evaluations (
@@ -70,10 +80,33 @@ router.post('/', async (req, res) => {
 
 router.get('/player/:playerId', async (req, res) => {
   try {
-    const result = await query(
-      'SELECT * FROM evaluations WHERE player_id = $1 ORDER BY created_at DESC',
-      [req.params.playerId]
-    );
+    const playerAllowed = await canAccessPlayer(req, req.params.playerId);
+    if (!playerAllowed) {
+      return res.status(403).json({ error: 'Player access denied' });
+    }
+
+    let result;
+    if (req.auth.organizationIds.length > 0) {
+      result = await query(
+        `SELECT e.*
+         FROM evaluations e
+         INNER JOIN teams t ON t.id = e.team_id
+         WHERE e.player_id = $1
+           AND t.organization_id = ANY($2::uuid[])
+         ORDER BY e.created_at DESC`,
+        [req.params.playerId, req.auth.organizationIds]
+      );
+    } else {
+      result = await query(
+        `SELECT *
+         FROM evaluations
+         WHERE player_id = $1
+           AND team_id = ANY($2::uuid[])
+         ORDER BY created_at DESC`,
+        [req.params.playerId, req.auth.teamIds]
+      );
+    }
+
     return res.json(result.rows);
   } catch (error) {
     return res.status(500).json({ error: error.message });
