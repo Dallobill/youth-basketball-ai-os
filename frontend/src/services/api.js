@@ -1,8 +1,7 @@
 import { demoData } from '../data/demoData.js';
 
 const API_BASE = import.meta.env?.VITE_API_URL || 'http://localhost:3001/api';
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-const LOGIN_URL = import.meta.env.VITE_LOGIN_URL || '/login';
+const LOGIN_URL = import.meta.env?.VITE_LOGIN_URL || '/login';
 const AUTH_TOKEN_STORAGE_KEY = 'ybos.auth.token';
 
 let authToken = null;
@@ -137,7 +136,7 @@ export function bootstrapAuth() {
     return savedToken;
   }
 
-  const envToken = import.meta.env.VITE_AUTH_TOKEN;
+  const envToken = import.meta.env?.VITE_AUTH_TOKEN;
   if (envToken) {
     setAuthToken(envToken);
     return envToken;
@@ -194,47 +193,24 @@ async function apiRequest(path, options = {}) {
 
 export async function getDashboardData() {
   try {
-    const [teamsResponse, playersResponse, aiReportsResponse] = await Promise.all([
+    const [teamsResponse, playersResponse] = await Promise.all([
       fetch(`${API_BASE}/teams`),
-      fetch(`${API_BASE}/players`),
-      fetch(`${API_BASE}/ai/reports?page=1&pageSize=6`)
+      fetch(`${API_BASE}/players`)
     ]);
 
     if (!teamsResponse.ok || !playersResponse.ok) {
       throw new Error('Falling back to demo data');
     }
 
-    const [teams, players] = await Promise.all([
+    const [teamsPayload, playersPayload] = await Promise.all([
       teamsResponse.json(),
       playersResponse.json()
     ]);
-    return mapDashboardData({ teams, players });
-    const [teams, players, aiReportsPayload] = await Promise.all([
-      teamsResponse.json(),
-      playersResponse.json(),
-      aiReportsResponse.ok ? aiReportsResponse.json() : Promise.resolve({ data: [] })
-    ]);
-    const normalizedTeams = teams.map((team) => ({
-      ...team,
-      ageGroup: team.age_group || team.ageGroup,
-      rosterCount: Number(team.roster_count ?? team.rosterCount ?? 0)
-    }));
-    const recentAiReports = Array.isArray(aiReportsPayload?.data) ? aiReportsPayload.data.map(normalizeAiReport) : [];
 
-    return {
-      organizationName: 'Youth Basketball AI OS',
-      totals: {
-        totalTeams: normalizedTeams.length,
-        totalPlayers: players.length,
-        recentEvaluations: 0,
-        aiReports: Number(aiReportsPayload?.pagination?.total ?? recentAiReports.length)
-      },
-      teams: normalizedTeams,
-      recentEvaluations: [],
-      playersNeedingReview: [],
-      recentAiReports,
-      players
-    };
+    const teams = Array.isArray(teamsPayload) ? teamsPayload : (teamsPayload?.data || []);
+    const players = Array.isArray(playersPayload) ? playersPayload : (playersPayload?.data || []);
+
+    return mapDashboardData({ teams, players });
   } catch (error) {
     if (error instanceof UnauthorizedError) throw error;
     return buildDashboardFromDemo();

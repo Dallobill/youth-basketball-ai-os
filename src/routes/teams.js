@@ -1,59 +1,131 @@
 const express = require('express');
 const { query } = require('../db');
-const { requireWriteRole, canAccessOrganization, canAccessTeam, getTeamScope } = require('../middleware/auth');
 
 const router = express.Router();
 
+function normalizeTeam(row) {
+  return {
+    id: row.id,
+    organizationId: row.organization_id,
+    name: row.name,
+    ageGroup: row.age_group,
+    season: row.season,
+    status: row.status,
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 router.get('/', async (req, res) => {
   try {
-    const { clause, params } = getTeamScope(req);
+    const { status, season, ageGroup } = req.query;
+    const filters = [];
+    const params = [];
+
+    if (status) {
+      params.push(status);
+      filters.push(`status = $${params.length}`);
+    }
+
+    if (season) {
+      params.push(season);
+      filters.push(`season = $${params.length}`);
+    }
+
+    if (ageGroup) {
+      params.push(ageGroup);
+      filters.push(`age_group = $${params.length}`);
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
     const result = await query(
-      `SELECT t.*, COUNT(ptm.id) FILTER (WHERE ptm.is_active = TRUE) AS roster_count
-       FROM teams t
-       LEFT JOIN player_team_memberships ptm ON ptm.team_id = t.id
-       WHERE ${clause}
-       GROUP BY t.id
-       ORDER BY t.created_at DESC`,
+      `SELECT *
+       FROM teams
+       ${whereClause}
+       ORDER BY created_at DESC`,
       params
     );
 
-    return res.json(result.rows);
+    return res.json({ data: result.rows.map(normalizeTeam) });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
 
-router.post('/', requireWriteRole, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const { organizationId, seasonId, name, ageGroup, level } = req.body;
+    const { organizationId, name, ageGroup, season, status = 'active', notes = null } = req.body;
 
-    const hasAccess = await canAccessOrganization(req, organizationId);
-    if (!hasAccess) {
-      return res.status(403).json({ error: 'Organization access denied' });
+    if (!organizationId || !name || !ageGroup || !season) {
+      return res.status(400).json({
+        error: 'organizationId, name, ageGroup, and season are required'
+      });
+    }
+
+    if (!['active', 'archived'].includes(status)) {
+      return res.status(400).json({ error: 'status must be active or archived' });
     }
 
     const result = await query(
-      `INSERT INTO teams (organization_id, season_id, name, age_group, level)
-       VALUES ($1,$2,$3,$4,$5)
+      `INSERT INTO teams (organization_id, name, age_group, season, status, notes)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [organizationId, seasonId || null, name, ageGroup || null, level || null]
+      [organizationId, name, ageGroup, season, status, notes]
     );
 
-    return res.status(201).json(result.rows[0]);
+    return res.status(201).json({ data: normalizeTeam(result.rows[0]) });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.patch('/:teamId', async (req, res) => {
   try {
-    const result = await query('SELECT * FROM teams WHERE id = $1', [
-      req.params.id
-    ]);
+    const { teamId } = req.params;
+    const { name, ageGroup, season, status, notes } = req.body;
+
+    if (status && !['active', 'archived'].includes(status)) {
+      return res.status(400).json({ error: 'status must be active or archived' });
+    }
+
+    const fields = [];
+    const params = [];
+
+    const fieldMap = {
+      name: 'name',
+      ageGroup: 'age_group',
+      season: 'season',
+      status: 'status',
+      notes: 'notes'
+    };
+
+    for (const [key, column] of Object.entries(fieldMap)) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        params.push(req.body[key]);
+        fields.push(`${column} = $${params.length}`);
+      }
+    }
+
+    if (!fields.length) {
+      return res.status(400).json({ error: 'At least one field is required for update' });
+    }
+
+    params.push(teamId);
+    const result = await query(
+      `UPDATE teams
+       SET ${fields.join(', ')}
+       WHERE id = $${params.length}
+       RETURNING *`,
+      params
+    );
+
     if (!result.rows.length) {
       return res.status(404).json({ error: 'Team not found' });
     }
-    return res.json(result.rows[0]);
+
+    return res.json({ data: normalizeTeam(result.rows[0]) });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
