@@ -1,4 +1,5 @@
 const express = require('express');
+const { createAiReport, getAiReports } = require('../db');
 const {
   buildPlayerSummary,
   buildTeamSummary,
@@ -28,12 +29,22 @@ function extractContent(output) {
 }
 
 async function persistReport({ reportType, output, payload }) {
+  const reportTypeMap = {
+    team_summary: 'trend_summary',
+    practice_plan: 'intervention_plan'
+  };
+  const normalizedReportType = reportTypeMap[reportType] || reportType;
+
   return createAiReport({
-    reportType,
+    organizationId: payload.organizationId || payload.organization_id,
+    reportType: normalizedReportType,
+    sourceType: payload.sourceType || 'daily',
     headline: extractHeadline(output, reportType.replaceAll('_', ' ')),
     content: extractContent(output),
     teamId: payload.teamId || payload.team_id || null,
-    playerId: payload.playerId || payload.player_id || null
+    playerId: payload.playerId || payload.player_id || null,
+    rangeStart: payload.rangeStart || null,
+    rangeEnd: payload.rangeEnd || null
   });
 }
 
