@@ -80,9 +80,53 @@ async function buildParentUpdate(input) {
   };
 }
 
+function pickTopMetrics(snapshot, order = 'desc') {
+  const entries = Object.entries(snapshot)
+    .filter(
+      ([key, value]) =>
+        !['range_start', 'range_end', 'entry_count'].includes(key) &&
+        value !== null &&
+        value !== undefined
+    )
+    .map(([key, value]) => [key, Number(value)]);
+
+  entries.sort((a, b) => (order === 'desc' ? b[1] - a[1] : a[1] - b[1]));
+  return entries.slice(0, 3).map(([key, value]) => ({ metric: key, score: Number(value.toFixed(2)) }));
+}
+
+async function buildTrendRecommendation({ playerId, days, snapshot }) {
+  const strongest = pickTopMetrics(snapshot, 'desc');
+  const weakest = pickTopMetrics(snapshot, 'asc');
+
+  return {
+    headline: `${days}-day development recommendation`,
+    summary: `Player ${playerId} shows strongest performance in ${strongest
+      .map((item) => item.metric)
+      .join(', ')}. The next focus should be ${weakest.map((item) => item.metric).join(', ')}.`,
+    riskFlags: weakest.map((item) => ({
+      metric: item.metric,
+      severity: item.score < 4 ? 'high' : 'moderate',
+      note: `Average score is ${item.score}.`
+    })),
+    interventions: weakest.map((item) => ({
+      priority: item.metric,
+      recommendation: `Add 10-15 minutes of targeted reps for ${item.metric} in the next practice cycle.`
+    })),
+    playerMessage: `Your best area this period was ${strongest[0]?.metric}. We will focus next on ${weakest[0]?.metric} to keep your growth moving.`,
+    supportingMetrics: {
+      entryCount: snapshot.entry_count,
+      rangeStart: snapshot.range_start,
+      rangeEnd: snapshot.range_end,
+      strongest,
+      weakest
+    }
+  };
+}
+
 module.exports = {
   buildPlayerSummary,
   buildTeamSummary,
   buildPracticePlan,
-  buildParentUpdate
+  buildParentUpdate,
+  buildTrendRecommendation
 };

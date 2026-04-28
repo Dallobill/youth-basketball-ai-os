@@ -15,12 +15,41 @@ async function query(text, params = []) {
   return result;
 }
 
-async function createAiReport({ reportType, headline = null, content, teamId = null, playerId = null }) {
+async function createAiReport({
+  organizationId = null,
+  reportType,
+  sourceType = 'trend_snapshot',
+  headline = null,
+  content,
+  teamId = null,
+  playerId = null,
+  rangeStart = null,
+  rangeEnd = null,
+  riskFlags = [],
+  recommendations = [],
+  supportingMetrics = {}
+}) {
   const result = await query(
-    `INSERT INTO ai_reports (report_type, headline, content, team_id, player_id)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO ai_reports (
+      organization_id, team_id, player_id, source_type, range_start, range_end, report_type, headline,
+      summary_text, risk_flags_json, recommendations_json, supporting_metrics_json
+    )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12::jsonb)
      RETURNING *`,
-    [reportType, headline, content, teamId, playerId]
+    [
+      organizationId,
+      teamId,
+      playerId,
+      sourceType,
+      rangeStart,
+      rangeEnd,
+      reportType,
+      headline,
+      content,
+      JSON.stringify(riskFlags),
+      JSON.stringify(recommendations),
+      JSON.stringify(supportingMetrics)
+    ]
   );
 
   return result.rows[0];
@@ -62,7 +91,7 @@ async function getAiReports({ teamId, playerId, reportType, page = 1, pageSize =
     `SELECT *
      FROM ai_reports
      ${whereClause}
-     ORDER BY created_at DESC
+     ORDER BY generated_at DESC
      LIMIT ${limitParam} OFFSET ${offsetParam}`,
     params
   );

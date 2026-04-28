@@ -32,7 +32,22 @@ All player responses return `{ data: ... }` with camelCase fields.
 - `injuryStatus` must be one of: `healthy`, `limited`, `out`, `return_to_play`.
 - `playerStatus` must be one of: `active`, `inactive`, `removed`.
 
+## Development Tracking + Trends + Recommendations
+
+- `POST /development/entries`
+- `GET /development/players/:playerId/snapshot?days=7|30`
+- `POST /development/players/:playerId/recommendation`
+
+All responses return `{ data: ... }` with camelCase fields.
+
+### Development rules
+- `organizationId`, `playerId`, `entryDate`, and `entryType` are required on development entry create.
+- `entryType` must be one of: `practice`, `game`, `workout`, `film`, `weekly_review`, `monthly_review`.
+- Skill metric inputs must be numbers between `0` and `10` (or null/omitted).
+- Snapshot endpoint supports `days=7` and `days=30`.
+- Recommendation endpoint requires `organizationId` and stores output in `ai_reports`.
+
 ## Current implementation notes
 
-- Milestone 1 SQL is now available at `sql/phase2_milestone1.sql`.
-- The route contract here intentionally scopes to teams + players as the first backend implementation step.
+- Milestone 1 SQL is available at `sql/phase2_milestone1.sql`.
+- Route contract now includes teams, players, development tracking, trend snapshots, and AI recommendations.

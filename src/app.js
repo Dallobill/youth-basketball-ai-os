@@ -6,6 +6,7 @@ const playersRouter = require('./routes/players');
 const teamsRouter = require('./routes/teams');
 const createEvaluationsRouter = require('./routes/evaluations');
 const aiRouter = require('./routes/ai');
+const developmentRouter = require('./routes/development');
 
 function createApp({ queryFn = query } = {}) {
   const app = express();
@@ -26,6 +27,7 @@ function createApp({ queryFn = query } = {}) {
   app.use('/api/teams', teamsRouter);
   app.use('/api/evaluations', createEvaluationsRouter(queryFn));
   app.use('/api/ai', aiRouter);
+  app.use('/api/development', developmentRouter);
 
   return app;
 }
