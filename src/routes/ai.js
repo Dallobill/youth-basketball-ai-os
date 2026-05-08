@@ -43,27 +43,91 @@ function extractContent(output) {
   return JSON.stringify(output);
 }
 
-function parseOptionalRating(value) {
-  if (value === null || value === undefined || value === '') {
-    return null;
-  }
+async function persistReport({ reportType, output, payload }) {
+  const reportTypeMap = {
+    team_summary: 'trend_summary',
+    practice_plan: 'intervention_plan'
+  };
+  const normalizedReportType = reportTypeMap[reportType] || reportType;
 
-  const rating = Number(value);
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return undefined;
-  }
-
-  return rating;
+  return createAiReport({
+    organizationId: payload.organizationId || payload.organization_id,
+    reportType: normalizedReportType,
+    sourceType: payload.sourceType || 'daily',
+    headline: extractHeadline(output, reportType.replaceAll('_', ' ')),
+    content: extractContent(output),
+    teamId: payload.teamId || payload.team_id || null,
+    playerId: payload.playerId || payload.player_id || null,
+    rangeStart: payload.rangeStart || null,
+    rangeEnd: payload.rangeEnd || null
+  });
 }
 
-function createAiRouter({
-  createAiReportFn = createAiReport,
-  getAiReportsFn = getAiReports,
-  createAiReportReviewFn = createAiReportReview,
-  getAiReportReviewsFn = getAiReportReviews,
-  getAiReportExportFn = getAiReportExport
-} = {}) {
-  const router = express.Router();
+router.post('/player-summary', async (req, res) => {
+  try {
+    const output = await buildPlayerSummary(req.body);
+    const savedReport = await persistReport({
+      reportType: 'player_summary',
+      output,
+      payload: req.body || {}
+    });
+    return res.json({ ...output, reportId: savedReport.id });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/team-summary', async (req, res) => {
+  try {
+    const output = await buildTeamSummary(req.body);
+    const savedReport = await persistReport({
+      reportType: 'team_summary',
+      output,
+      payload: req.body || {}
+    });
+    return res.json({ ...output, reportId: savedReport.id });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/practice-plan', async (req, res) => {
+  try {
+    const output = await buildPracticePlan(req.body);
+    const savedReport = await persistReport({
+      reportType: 'practice_plan',
+      output,
+      payload: req.body || {}
+    });
+    return res.json({ ...output, reportId: savedReport.id });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/parent-update', async (req, res) => {
+  try {
+    const output = await buildParentUpdate(req.body);
+    const savedReport = await persistReport({
+      reportType: 'parent_update',
+      output,
+      payload: req.body || {}
+    });
+    return res.json({ ...output, reportId: savedReport.id });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+router.get('/reports', async (req, res) => {
+  try {
+    const { teamId, playerId, reportType, page, pageSize } = req.query;
+    const result = await getAiReports({
+      teamId,
+      playerId,
+      reportType,
+      page,
+      pageSize
+    });
 
   async function persistReport({ reportType, output, payload }) {
     const reportTypeMap = {

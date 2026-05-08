@@ -137,20 +137,6 @@ test('canonical schema contains AI report fields used by persistence helpers', (
     'supporting_metrics_json',
     'generated_at'
   ]);
-
-  assertColumns('ai_report_reviews', [
-    'id',
-    'ai_report_id',
-    'reviewer_sub',
-    'reviewer_email',
-    'status',
-    'rating',
-    'edited_headline',
-    'edited_summary_text',
-    'feedback_notes',
-    'review_tags_json',
-    'reviewed_at'
-  ]);
 });
 
 test('canonical schema keeps membership table used by team-scoped auth', () => {

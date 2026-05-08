@@ -17,6 +17,14 @@ function requireWriteRoleForMutations(req, res, next) {
   return requireWriteRole(req, res, next);
 }
 
+function requireWriteRoleForMutations(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+
+  return requireWriteRole(req, res, next);
+}
+
 function createApp({ queryFn = query, aiRouterOptions = {} } = {}) {
   const app = express();
 

@@ -192,27 +192,6 @@ CREATE INDEX IF NOT EXISTS idx_ai_reports_generated_at ON ai_reports(generated_a
 CREATE INDEX IF NOT EXISTS idx_ai_reports_player_range ON ai_reports(player_id, range_start, range_end);
 
 -- =====================================================
--- ai_report_reviews
--- =====================================================
-CREATE TABLE IF NOT EXISTS ai_report_reviews (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  ai_report_id UUID NOT NULL REFERENCES ai_reports(id) ON DELETE CASCADE,
-  reviewer_sub TEXT,
-  reviewer_email TEXT,
-  status TEXT NOT NULL CHECK (status IN ('approved', 'rejected', 'changes_requested')),
-  rating INTEGER CHECK (rating BETWEEN 1 AND 5),
-  edited_headline TEXT,
-  edited_summary_text TEXT,
-  feedback_notes TEXT,
-  review_tags_json JSONB NOT NULL DEFAULT '[]'::jsonb,
-  reviewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_ai_report_reviews_ai_report_id ON ai_report_reviews(ai_report_id);
-CREATE INDEX IF NOT EXISTS idx_ai_report_reviews_status ON ai_report_reviews(status);
-CREATE INDEX IF NOT EXISTS idx_ai_report_reviews_reviewed_at ON ai_report_reviews(reviewed_at DESC);
-
--- =====================================================
 -- updated_at trigger
 -- =====================================================
 CREATE OR REPLACE FUNCTION set_updated_at()
