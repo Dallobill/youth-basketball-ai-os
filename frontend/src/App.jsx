@@ -157,7 +157,9 @@ export default function App() {
           {
             ...saved,
             playerId: payload.playerId,
-            playerName: selected ? formatPlayerName(selected) : 'Player evaluation'
+            playerName: selected
+              ? formatPlayerName(selected)
+              : 'Player evaluation'
           },
           ...(current.recentEvaluations || [])
         ].slice(0, 6);

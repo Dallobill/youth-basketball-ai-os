@@ -75,30 +75,54 @@ router.post('/entries', async (req, res) => {
       });
     }
 
-    const validTypes = ['practice', 'game', 'workout', 'film', 'weekly_review', 'monthly_review'];
+    const validTypes = [
+      'practice',
+      'game',
+      'workout',
+      'film',
+      'weekly_review',
+      'monthly_review'
+    ];
     if (!validTypes.includes(entryType)) {
       return res.status(400).json({ error: 'Invalid entryType value' });
     }
 
-    const camelMetrics = Object.fromEntries(metricColumns.map((col) => [toMetricKey(col), col]));
+    const camelMetrics = Object.fromEntries(
+      metricColumns.map((col) => [toMetricKey(col), col])
+    );
     const metricValues = {};
 
     for (const [apiKey, column] of Object.entries(camelMetrics)) {
       if (Object.prototype.hasOwnProperty.call(rawMetrics, apiKey)) {
         const value = rawMetrics[apiKey];
-        if (value !== null && (typeof value !== 'number' || value < 0 || value > 10)) {
-          return res.status(400).json({ error: `${apiKey} must be a number between 0 and 10 or null` });
+        if (
+          value !== null &&
+          (typeof value !== 'number' || value < 0 || value > 10)
+        ) {
+          return res.status(400).json({
+            error: `${apiKey} must be a number between 0 and 10 or null`
+          });
         }
         metricValues[column] = value;
       }
     }
 
-    const columns = ['organization_id', 'team_id', 'player_id', 'entry_date', 'entry_type'];
+    const columns = [
+      'organization_id',
+      'team_id',
+      'player_id',
+      'entry_date',
+      'entry_type'
+    ];
     const values = [organizationId, teamId, playerId, entryDate, entryType];
 
     for (const column of metricColumns) {
       columns.push(column);
-      values.push(Object.prototype.hasOwnProperty.call(metricValues, column) ? metricValues[column] : null);
+      values.push(
+        Object.prototype.hasOwnProperty.call(metricValues, column)
+          ? metricValues[column]
+          : null
+      );
     }
 
     columns.push('strengths', 'priorities', 'coach_notes', 'context_notes');
@@ -136,7 +160,10 @@ router.get('/players/:playerId/snapshot', async (req, res) => {
     );
 
     const averageSql = metricColumns
-      .map((column) => `AVG(${column}) FILTER (WHERE ${column} IS NOT NULL) AS avg_${column}`)
+      .map(
+        (column) =>
+          `AVG(${column}) FILTER (WHERE ${column} IS NOT NULL) AS avg_${column}`
+      )
       .join(', ');
 
     const averagesResult = await query(
@@ -150,18 +177,25 @@ router.get('/players/:playerId/snapshot', async (req, res) => {
     const averages = Object.fromEntries(
       metricColumns.map((column) => {
         const value = averagesRow[`avg_${column}`];
-        return [toMetricKey(column), value === null || value === undefined ? null : Number(value)];
+        return [
+          toMetricKey(column),
+          value === null || value === undefined ? null : Number(value)
+        ];
       })
     );
 
-    const sorted = Object.entries(averages).filter(([, value]) => typeof value === 'number').sort((a, b) => b[1] - a[1]);
+    const sorted = Object.entries(averages)
+      .filter(([, value]) => typeof value === 'number')
+      .sort((a, b) => b[1] - a[1]);
 
     return res.json({
       data: {
         playerId: req.params.playerId,
         days,
         entryCount: rowsResult.rows.length,
-        rangeStart: rowsResult.rows.length ? rowsResult.rows[rowsResult.rows.length - 1].entry_date : null,
+        rangeStart: rowsResult.rows.length
+          ? rowsResult.rows[rowsResult.rows.length - 1].entry_date
+          : null,
         rangeEnd: rowsResult.rows.length ? rowsResult.rows[0].entry_date : null,
         averages,
         strongestAreas: sorted.slice(0, 3).map(([metric]) => metric),
@@ -206,10 +240,16 @@ router.post('/players/:playerId/recommendation', async (req, res) => {
 
     const snapshot = snapshotResult.rows[0];
     if (!snapshot || !snapshot.entry_count) {
-      return res.status(404).json({ error: 'No development entries found for the selected range' });
+      return res
+        .status(404)
+        .json({ error: 'No development entries found for the selected range' });
     }
 
-    const output = await buildTrendRecommendation({ playerId: req.params.playerId, days, snapshot });
+    const output = await buildTrendRecommendation({
+      playerId: req.params.playerId,
+      days,
+      snapshot
+    });
 
     const saved = await createAiReport({
       organizationId,
