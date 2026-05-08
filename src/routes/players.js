@@ -61,7 +61,9 @@ router.get('/', async (req, res) => {
 
 router.get('/:playerId', async (req, res) => {
   try {
-    const result = await query('SELECT * FROM players WHERE id = $1', [req.params.playerId]);
+    const result = await query('SELECT * FROM players WHERE id = $1', [
+      req.params.playerId
+    ]);
 
     if (!result.rows.length) {
       return res.status(404).json({ error: 'Player not found' });
@@ -90,14 +92,20 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     if (!organizationId || !firstName || !lastName) {
-      return res.status(400).json({ error: 'organizationId, firstName, and lastName are required' });
+      return res.status(400).json({
+        error: 'organizationId, firstName, and lastName are required'
+      });
     }
 
     if (!['left', 'right', 'both', null].includes(dominantHand)) {
-      return res.status(400).json({ error: 'dominantHand must be left, right, both, or null' });
+      return res
+        .status(400)
+        .json({ error: 'dominantHand must be left, right, both, or null' });
     }
 
-    if (!['healthy', 'limited', 'out', 'return_to_play'].includes(injuryStatus)) {
+    if (
+      !['healthy', 'limited', 'out', 'return_to_play'].includes(injuryStatus)
+    ) {
       return res.status(400).json({ error: 'Invalid injuryStatus value' });
     }
 
@@ -160,7 +168,9 @@ router.patch('/:playerId', async (req, res) => {
     }
 
     if (!updates.length) {
-      return res.status(400).json({ error: 'At least one field is required for update' });
+      return res
+        .status(400)
+        .json({ error: 'At least one field is required for update' });
     }
 
     params.push(req.params.playerId);
@@ -191,7 +201,9 @@ router.post('/:playerId/assign-team', async (req, res) => {
       return res.status(400).json({ error: 'teamId is required' });
     }
 
-    const existing = await query('SELECT team_id FROM players WHERE id = $1', [req.params.playerId]);
+    const existing = await query('SELECT team_id FROM players WHERE id = $1', [
+      req.params.playerId
+    ]);
     if (!existing.rows.length) {
       return res.status(404).json({ error: 'Player not found' });
     }

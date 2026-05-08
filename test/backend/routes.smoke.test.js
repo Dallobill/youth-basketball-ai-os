@@ -55,7 +55,7 @@ test('POST /api/evaluations returns created evaluation', async () => {
     const body = await response.json();
 
     assert.equal(response.status, 201);
-    assert.equal(body.id, 'eval_1');
+    assert.equal(body.data.id, 'eval_1');
     assert.equal(queryCalls.length, 1);
     assert.match(queryCalls[0].sql, /INSERT INTO evaluations/);
     assert.equal(queryCalls[0].params[1], 'player_jaylen');
@@ -81,6 +81,8 @@ test('GET /api/evaluations/player/:playerId returns rows', async () => {
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.deepEqual(body, [{ id: 'eval_1', player_id: 'player_jaylen' }]);
+    assert.deepEqual(body, {
+      data: [{ id: 'eval_1', player_id: 'player_jaylen' }]
+    });
   });
 });

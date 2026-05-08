@@ -90,6 +90,88 @@ export function normalizeTeam(team) {
   };
 }
 
+export function unwrapApiData(payload, fallback = []) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (payload && Object.prototype.hasOwnProperty.call(payload, 'data')) {
+    return payload.data ?? fallback;
+  }
+
+  if (payload && typeof payload === 'object' && !Array.isArray(fallback)) {
+    return payload;
+  }
+
+  return fallback;
+}
+
+function numberOrNull(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function normalizePlayer(player, fallbackTeamId = null) {
+  return {
+    ...player,
+    teamId: player.teamId || player.team_id || fallbackTeamId,
+    firstName: player.firstName || player.first_name,
+    lastName: player.lastName || player.last_name,
+    jerseyNumber: player.jerseyNumber || player.jersey_number,
+    graduationYear: player.graduationYear || player.graduation_year,
+    dominantHand: player.dominantHand || player.dominant_hand,
+    injuryStatus: player.injuryStatus || player.injury_status
+  };
+}
+
+export function normalizeEvaluation(evaluation, fallback = {}) {
+  return {
+    ...fallback,
+    ...evaluation,
+    teamId: evaluation.teamId || evaluation.team_id || fallback.teamId,
+    playerId: evaluation.playerId || evaluation.player_id || fallback.playerId,
+    coachId: evaluation.coachId || evaluation.coach_id || fallback.coachId,
+    createdAt:
+      evaluation.createdAt || evaluation.created_at || fallback.createdAt,
+    evaluationType:
+      evaluation.evaluationType ||
+      evaluation.evaluation_type ||
+      fallback.evaluationType,
+    ballHandling: numberOrNull(
+      evaluation.ballHandling ??
+        evaluation.ball_handling ??
+        fallback.ballHandling
+    ),
+    finishing: numberOrNull(evaluation.finishing ?? fallback.finishing),
+    shooting: numberOrNull(evaluation.shooting ?? fallback.shooting),
+    passingDecision: numberOrNull(
+      evaluation.passingDecision ??
+        evaluation.passing_decision ??
+        fallback.passingDecision
+    ),
+    defenseOnBall: numberOrNull(
+      evaluation.defenseOnBall ??
+        evaluation.defense_on_ball ??
+        fallback.defenseOnBall
+    ),
+    defenseHelp: numberOrNull(
+      evaluation.defenseHelp ?? evaluation.defense_help ?? fallback.defenseHelp
+    ),
+    rebounding: numberOrNull(evaluation.rebounding ?? fallback.rebounding),
+    communication: numberOrNull(
+      evaluation.communication ?? fallback.communication
+    ),
+    motorEffort: numberOrNull(
+      evaluation.motorEffort ?? evaluation.motor_effort ?? fallback.motorEffort
+    ),
+    basketballIq: numberOrNull(
+      evaluation.basketballIq ??
+        evaluation.basketball_iq ??
+        fallback.basketballIq
+    )
+  };
+}
+
 export function mapDashboardData({ teams, players }) {
   const normalizedTeams = teams.map(normalizeTeam);
 
@@ -121,12 +203,18 @@ function getEvaluationsForPlayer(playerId) {
 export function bootstrapAuth() {
   if (typeof window === 'undefined') return null;
 
-  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const hashParams = new URLSearchParams(
+    window.location.hash.replace(/^#/, '')
+  );
   const hashToken = hashParams.get('access_token');
 
   if (hashToken) {
     setAuthToken(hashToken);
-    window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname + window.location.search
+    );
     return hashToken;
   }
 
@@ -207,8 +295,10 @@ export async function getDashboardData() {
       playersResponse.json()
     ]);
 
-    const teams = Array.isArray(teamsPayload) ? teamsPayload : (teamsPayload?.data || []);
-    const players = Array.isArray(playersPayload) ? playersPayload : (playersPayload?.data || []);
+    const teams = unwrapApiData(teamsPayload);
+    const players = unwrapApiData(playersPayload).map((player) =>
+      normalizePlayer(player)
+    );
 
     return mapDashboardData({ teams, players });
   } catch (error) {
@@ -221,17 +311,10 @@ export async function getTeamRoster(teamId) {
   try {
     const response = await apiRequest(`/players?teamId=${teamId}`);
     if (!response.ok) throw new Error('Team roster unavailable');
-    const roster = await response.json();
-    return roster.map((player) => ({
-      ...player,
-      teamId: player.teamId || teamId,
-      firstName: player.first_name || player.firstName,
-      lastName: player.last_name || player.lastName,
-      jerseyNumber: player.jersey_number || player.jerseyNumber,
-      graduationYear: player.graduation_year || player.graduationYear,
-      dominantHand: player.dominant_hand || player.dominantHand,
-      injuryStatus: player.injury_status || player.injuryStatus
-    }));
+    const rosterPayload = await response.json();
+    return unwrapApiData(rosterPayload).map((player) =>
+      normalizePlayer(player, teamId)
+    );
   } catch (error) {
     if (error instanceof UnauthorizedError) throw error;
     return getPlayersForTeam(teamId);
@@ -242,26 +325,10 @@ export async function getPlayerEvaluations(playerId) {
   try {
     const response = await apiRequest(`/evaluations/player/${playerId}`);
     if (!response.ok) throw new Error('Evaluations unavailable');
-    const evaluations = await response.json();
-    return evaluations.map((evaluation) => ({
-      ...evaluation,
-      createdAt: evaluation.created_at || evaluation.createdAt,
-      evaluationType: evaluation.evaluation_type || evaluation.evaluationType,
-      ballHandling: Number(evaluation.ball_handling ?? evaluation.ballHandling),
-      finishing: Number(evaluation.finishing),
-      shooting: Number(evaluation.shooting),
-      passingDecision: Number(
-        evaluation.passing_decision ?? evaluation.passingDecision
-      ),
-      defenseOnBall: Number(
-        evaluation.defense_on_ball ?? evaluation.defenseOnBall
-      ),
-      defenseHelp: Number(evaluation.defense_help ?? evaluation.defenseHelp),
-      rebounding: Number(evaluation.rebounding),
-      communication: Number(evaluation.communication),
-      motorEffort: Number(evaluation.motor_effort ?? evaluation.motorEffort),
-      basketballIq: Number(evaluation.basketball_iq ?? evaluation.basketballIq)
-    }));
+    const evaluationsPayload = await response.json();
+    return unwrapApiData(evaluationsPayload).map((evaluation) =>
+      normalizeEvaluation(evaluation)
+    );
   } catch (error) {
     if (error instanceof UnauthorizedError) throw error;
     return getEvaluationsForPlayer(playerId);
@@ -279,42 +346,8 @@ export async function createEvaluation(payload) {
       throw new Error('Could not save evaluation');
     }
 
-    const evaluation = await response.json();
-    return {
-      ...evaluation,
-      createdAt: evaluation.created_at || evaluation.createdAt,
-      evaluationType: evaluation.evaluation_type || evaluation.evaluationType,
-      ballHandling: Number(
-        evaluation.ball_handling ??
-          evaluation.ballHandling ??
-          payload.ballHandling
-      ),
-      finishing: Number(evaluation.finishing ?? payload.finishing),
-      shooting: Number(evaluation.shooting ?? payload.shooting),
-      passingDecision: Number(
-        evaluation.passing_decision ??
-          evaluation.passingDecision ??
-          payload.passingDecision
-      ),
-      defenseOnBall: Number(
-        evaluation.defense_on_ball ??
-          evaluation.defenseOnBall ??
-          payload.defenseOnBall
-      ),
-      defenseHelp: Number(
-        evaluation.defense_help ?? evaluation.defenseHelp ?? payload.defenseHelp
-      ),
-      rebounding: Number(evaluation.rebounding ?? payload.rebounding),
-      communication: Number(evaluation.communication ?? payload.communication),
-      motorEffort: Number(
-        evaluation.motor_effort ?? evaluation.motorEffort ?? payload.motorEffort
-      ),
-      basketballIq: Number(
-        evaluation.basketball_iq ??
-          evaluation.basketballIq ??
-          payload.basketballIq
-      )
-    };
+    const evaluationPayload = await response.json();
+    return normalizeEvaluation(unwrapApiData(evaluationPayload, {}), payload);
   } catch (error) {
     if (error instanceof UnauthorizedError) throw error;
 
