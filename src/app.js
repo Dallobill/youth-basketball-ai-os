@@ -7,6 +7,15 @@ const teamsRouter = require('./routes/teams');
 const createEvaluationsRouter = require('./routes/evaluations');
 const aiRouter = require('./routes/ai');
 const developmentRouter = require('./routes/development');
+const { authRequired, requireWriteRole } = require('./middleware/auth');
+
+function requireWriteRoleForMutations(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+
+  return requireWriteRole(req, res, next);
+}
 
 function createApp({ queryFn = query } = {}) {
   const app = express();
@@ -22,6 +31,9 @@ function createApp({ queryFn = query } = {}) {
       return res.status(500).json({ ok: false, error: error.message });
     }
   });
+
+  app.use('/api', authRequired);
+  app.use('/api', requireWriteRoleForMutations);
 
   app.use('/api/players', playersRouter);
   app.use('/api/teams', teamsRouter);

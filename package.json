@@ -10,7 +10,8 @@
     "format:check": "prettier --check \"src/**/*.js\" \"test/**/*.js\" \".github/workflows/*.yml\" \"*.json\"",
     "format": "prettier --write \"src/**/*.js\" \"test/**/*.js\" \".github/workflows/*.yml\" \"*.json\"",
     "test": "node --test test/**/*.test.js",
-    "ci": "npm run lint && npm run format:check && npm run test && npm --prefix frontend run lint && npm --prefix frontend run format:check && npm --prefix frontend run test"
+    "ci": "npm run lint && npm run format:check && npm run test && npm --prefix frontend run lint && npm --prefix frontend run format:check && npm --prefix frontend run test",
+    "schema:check": "node --test test/backend/schema-contract.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

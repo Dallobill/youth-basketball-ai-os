@@ -282,8 +282,8 @@ async function apiRequest(path, options = {}) {
 export async function getDashboardData() {
   try {
     const [teamsResponse, playersResponse] = await Promise.all([
-      fetch(`${API_BASE}/teams`),
-      fetch(`${API_BASE}/players`)
+      apiRequest('/teams'),
+      apiRequest('/players')
     ]);
 
     if (!teamsResponse.ok || !playersResponse.ok) {
