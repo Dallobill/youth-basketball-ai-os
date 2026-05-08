@@ -5,7 +5,7 @@ const { query } = require('./db');
 const playersRouter = require('./routes/players');
 const teamsRouter = require('./routes/teams');
 const createEvaluationsRouter = require('./routes/evaluations');
-const aiRouter = require('./routes/ai');
+const createAiRouter = require('./routes/ai');
 const developmentRouter = require('./routes/development');
 const { authRequired, requireWriteRole } = require('./middleware/auth');
 
@@ -17,7 +17,15 @@ function requireWriteRoleForMutations(req, res, next) {
   return requireWriteRole(req, res, next);
 }
 
-function createApp({ queryFn = query } = {}) {
+function requireWriteRoleForMutations(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+
+  return requireWriteRole(req, res, next);
+}
+
+function createApp({ queryFn = query, aiRouterOptions = {} } = {}) {
   const app = express();
 
   app.use(cors());
@@ -38,7 +46,7 @@ function createApp({ queryFn = query } = {}) {
   app.use('/api/players', playersRouter);
   app.use('/api/teams', teamsRouter);
   app.use('/api/evaluations', createEvaluationsRouter(queryFn));
-  app.use('/api/ai', aiRouter);
+  app.use('/api/ai', createAiRouter(aiRouterOptions));
   app.use('/api/development', developmentRouter);
 
   return app;

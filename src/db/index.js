@@ -122,4 +122,76 @@ async function getAiReports({
   };
 }
 
-module.exports = { query, pool, createAiReport, getAiReports };
+async function createAiReportReview({
+  reportId,
+  reviewerSub = null,
+  reviewerEmail = null,
+  status,
+  rating = null,
+  editedHeadline = null,
+  editedSummaryText = null,
+  feedbackNotes = null,
+  reviewTags = []
+}) {
+  const result = await query(
+    `INSERT INTO ai_report_reviews (
+      ai_report_id, reviewer_sub, reviewer_email, status, rating, edited_headline,
+      edited_summary_text, feedback_notes, review_tags_json
+    )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+     RETURNING *`,
+    [
+      reportId,
+      reviewerSub,
+      reviewerEmail,
+      status,
+      rating,
+      editedHeadline,
+      editedSummaryText,
+      feedbackNotes,
+      JSON.stringify(reviewTags)
+    ]
+  );
+
+  return result.rows[0];
+}
+
+async function getAiReportReviews({ reportId }) {
+  const result = await query(
+    `SELECT *
+     FROM ai_report_reviews
+     WHERE ai_report_id = $1
+     ORDER BY reviewed_at DESC`,
+    [reportId]
+  );
+
+  return result.rows;
+}
+
+async function getAiReportExport({ reportId }) {
+  const reportResult = await query('SELECT * FROM ai_reports WHERE id = $1', [
+    reportId
+  ]);
+
+  if (!reportResult.rows.length) {
+    return null;
+  }
+
+  const reviews = await getAiReportReviews({ reportId });
+
+  return {
+    report: reportResult.rows[0],
+    latestReview: reviews[0] || null,
+    reviews
+  };
+}
+
+module.exports = {
+  query,
+  pool,
+  createAiReport,
+  getAiReports,
+  getAiReportExport,
+  createAiReportReview,
+  getAiReportReviews
+};

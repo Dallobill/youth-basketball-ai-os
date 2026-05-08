@@ -124,13 +124,13 @@ The frontend includes a **demo-data fallback**, so the UI still works even if th
 5. AI summary draft is generated for coach and parent communication
 
 ## What to build next
-- Authentication + user roles
 - Team page tabs for practice and game logs
 - PDF exports for player reports
 - Parent portal
 - Team performance trends
 - Recruiting profiles
 - Real LLM integration in `src/services/aiService.js`
+- Phase 4 pilot review workflow in `docs/phase4-pilot-review-workflow.md`
 
 ## Recommended first pilot
 Use one NBG team for 4 weeks.
