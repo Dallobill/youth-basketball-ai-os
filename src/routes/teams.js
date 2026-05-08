@@ -56,7 +56,14 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { organizationId, name, ageGroup, season, status = 'active', notes = null } = req.body;
+    const {
+      organizationId,
+      name,
+      ageGroup,
+      season,
+      status = 'active',
+      notes = null
+    } = req.body;
 
     if (!organizationId || !name || !ageGroup || !season) {
       return res.status(400).json({
@@ -65,7 +72,9 @@ router.post('/', async (req, res) => {
     }
 
     if (!['active', 'archived'].includes(status)) {
-      return res.status(400).json({ error: 'status must be active or archived' });
+      return res
+        .status(400)
+        .json({ error: 'status must be active or archived' });
     }
 
     const result = await query(
@@ -87,7 +96,9 @@ router.patch('/:teamId', async (req, res) => {
     const { name, ageGroup, season, status, notes } = req.body;
 
     if (status && !['active', 'archived'].includes(status)) {
-      return res.status(400).json({ error: 'status must be active or archived' });
+      return res
+        .status(400)
+        .json({ error: 'status must be active or archived' });
     }
 
     const fields = [];
@@ -109,7 +120,9 @@ router.patch('/:teamId', async (req, res) => {
     }
 
     if (!fields.length) {
-      return res.status(400).json({ error: 'At least one field is required for update' });
+      return res
+        .status(400)
+        .json({ error: 'At least one field is required for update' });
     }
 
     params.push(teamId);

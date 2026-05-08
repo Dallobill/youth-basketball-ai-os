@@ -62,7 +62,7 @@ function createEvaluationsRouter(queryFn) {
         ]
       );
 
-      return res.status(201).json(result.rows[0]);
+      return res.status(201).json({ data: result.rows[0] });
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
@@ -74,7 +74,7 @@ function createEvaluationsRouter(queryFn) {
         'SELECT * FROM evaluations WHERE player_id = $1 ORDER BY created_at DESC',
         [req.params.playerId]
       );
-      return res.json(result.rows);
+      return res.json({ data: result.rows });
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
