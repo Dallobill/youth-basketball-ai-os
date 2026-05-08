@@ -136,7 +136,10 @@ async function canAccessOrganization(req, organizationId) {
 
   if (!req.auth.teamIds.length) return false;
 
-  const result = await query('SELECT organization_id FROM teams WHERE id = ANY($1::uuid[]) LIMIT 1', [req.auth.teamIds]);
+  const result = await query(
+    'SELECT organization_id FROM teams WHERE id = ANY($1::uuid[]) LIMIT 1',
+    [req.auth.teamIds]
+  );
   return result.rows.some((row) => row.organization_id === organizationId);
 }
 
@@ -144,7 +147,10 @@ async function canAccessTeam(req, teamId) {
   if (!teamId) return false;
   if (req.auth.teamIds.includes(teamId)) return true;
 
-  const result = await query('SELECT organization_id FROM teams WHERE id = $1', [teamId]);
+  const result = await query(
+    'SELECT organization_id FROM teams WHERE id = $1',
+    [teamId]
+  );
   if (!result.rows.length) return false;
 
   return req.auth.organizationIds.includes(result.rows[0].organization_id);

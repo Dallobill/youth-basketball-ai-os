@@ -10,7 +10,9 @@ const {
 const router = express.Router();
 
 function extractHeadline(output, fallback) {
-  return output?.headline || output?.practiceTheme || output?.message || fallback;
+  return (
+    output?.headline || output?.practiceTheme || output?.message || fallback
+  );
 }
 
 function extractContent(output) {
@@ -18,7 +20,14 @@ function extractContent(output) {
     return '';
   }
 
-  const priorityKeys = ['coachFocus', 'playerMessage', 'parentDraft', 'message', 'coachingEmphasis', 'practiceTheme'];
+  const priorityKeys = [
+    'coachFocus',
+    'playerMessage',
+    'parentDraft',
+    'message',
+    'coachingEmphasis',
+    'practiceTheme'
+  ];
   for (const key of priorityKeys) {
     if (typeof output[key] === 'string' && output[key].trim()) {
       return output[key].trim();
@@ -51,7 +60,11 @@ async function persistReport({ reportType, output, payload }) {
 router.post('/player-summary', async (req, res) => {
   try {
     const output = await buildPlayerSummary(req.body);
-    const savedReport = await persistReport({ reportType: 'player_summary', output, payload: req.body || {} });
+    const savedReport = await persistReport({
+      reportType: 'player_summary',
+      output,
+      payload: req.body || {}
+    });
     return res.json({ ...output, reportId: savedReport.id });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -61,7 +74,11 @@ router.post('/player-summary', async (req, res) => {
 router.post('/team-summary', async (req, res) => {
   try {
     const output = await buildTeamSummary(req.body);
-    const savedReport = await persistReport({ reportType: 'team_summary', output, payload: req.body || {} });
+    const savedReport = await persistReport({
+      reportType: 'team_summary',
+      output,
+      payload: req.body || {}
+    });
     return res.json({ ...output, reportId: savedReport.id });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -71,7 +88,11 @@ router.post('/team-summary', async (req, res) => {
 router.post('/practice-plan', async (req, res) => {
   try {
     const output = await buildPracticePlan(req.body);
-    const savedReport = await persistReport({ reportType: 'practice_plan', output, payload: req.body || {} });
+    const savedReport = await persistReport({
+      reportType: 'practice_plan',
+      output,
+      payload: req.body || {}
+    });
     return res.json({ ...output, reportId: savedReport.id });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -81,7 +102,11 @@ router.post('/practice-plan', async (req, res) => {
 router.post('/parent-update', async (req, res) => {
   try {
     const output = await buildParentUpdate(req.body);
-    const savedReport = await persistReport({ reportType: 'parent_update', output, payload: req.body || {} });
+    const savedReport = await persistReport({
+      reportType: 'parent_update',
+      output,
+      payload: req.body || {}
+    });
     return res.json({ ...output, reportId: savedReport.id });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -91,7 +116,13 @@ router.post('/parent-update', async (req, res) => {
 router.get('/reports', async (req, res) => {
   try {
     const { teamId, playerId, reportType, page, pageSize } = req.query;
-    const result = await getAiReports({ teamId, playerId, reportType, page, pageSize });
+    const result = await getAiReports({
+      teamId,
+      playerId,
+      reportType,
+      page,
+      pageSize
+    });
 
     return res.json({
       data: result.rows,

@@ -55,9 +55,19 @@ async function createAiReport({
   return result.rows[0];
 }
 
-async function getAiReports({ teamId, playerId, reportType, page = 1, pageSize = 10 }) {
-  const safePage = Number.isFinite(Number(page)) ? Math.max(1, Number(page)) : 1;
-  const safePageSize = Number.isFinite(Number(pageSize)) ? Math.min(Math.max(1, Number(pageSize)), 100) : 10;
+async function getAiReports({
+  teamId,
+  playerId,
+  reportType,
+  page = 1,
+  pageSize = 10
+}) {
+  const safePage = Number.isFinite(Number(page))
+    ? Math.max(1, Number(page))
+    : 1;
+  const safePageSize = Number.isFinite(Number(pageSize))
+    ? Math.min(Math.max(1, Number(pageSize)), 100)
+    : 10;
 
   const conditions = [];
   const params = [];
@@ -77,9 +87,14 @@ async function getAiReports({ teamId, playerId, reportType, page = 1, pageSize =
     conditions.push(`report_type = $${params.length}`);
   }
 
-  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = conditions.length
+    ? `WHERE ${conditions.join(' AND ')}`
+    : '';
 
-  const countResult = await query(`SELECT COUNT(*)::INT AS total FROM ai_reports ${whereClause}`, params);
+  const countResult = await query(
+    `SELECT COUNT(*)::INT AS total FROM ai_reports ${whereClause}`,
+    params
+  );
   const total = countResult.rows[0]?.total || 0;
 
   params.push(safePageSize);
