@@ -37,11 +37,20 @@ Output types:
 - AI: LLM endpoint for summarization + recommendations
 
 ## First build sequence
-1. Create the database using `sql/schema.sql`
-2. Seed basic sample data from `examples/sample-data.json`
-3. Run the Express API scaffold
-4. Run the frontend dashboard
-5. Add real AI generation after CRUD is working
+1. Create the database using the canonical fresh-install schema in `sql/schema.sql`.
+2. Verify schema/route compatibility with `npm run schema:check`.
+3. Seed basic sample data from `examples/sample-data.json`.
+4. Run the Express API scaffold.
+5. Run the frontend dashboard.
+6. Add real AI generation after CRUD is working.
+
+Apply the schema with PostgreSQL/Supabase tooling, for example:
+```bash
+psql "$DATABASE_URL" -f sql/schema.sql
+npm run schema:check
+```
+
+See `sql/README.md` for the current schema source-of-truth and migration notes.
 
 ## Backend local setup
 ```bash
@@ -115,13 +124,13 @@ The frontend includes a **demo-data fallback**, so the UI still works even if th
 5. AI summary draft is generated for coach and parent communication
 
 ## What to build next
-- Authentication + user roles
 - Team page tabs for practice and game logs
 - PDF exports for player reports
 - Parent portal
 - Team performance trends
 - Recruiting profiles
 - Real LLM integration in `src/services/aiService.js`
+- Phase 4 pilot review workflow in `docs/phase4-pilot-review-workflow.md`
 
 ## Recommended first pilot
 Use one NBG team for 4 weeks.

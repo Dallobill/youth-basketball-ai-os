@@ -91,7 +91,9 @@ function pickTopMetrics(snapshot, order = 'desc') {
     .map(([key, value]) => [key, Number(value)]);
 
   entries.sort((a, b) => (order === 'desc' ? b[1] - a[1] : a[1] - b[1]));
-  return entries.slice(0, 3).map(([key, value]) => ({ metric: key, score: Number(value.toFixed(2)) }));
+  return entries
+    .slice(0, 3)
+    .map(([key, value]) => ({ metric: key, score: Number(value.toFixed(2)) }));
 }
 
 async function buildTrendRecommendation({ playerId, days, snapshot }) {
@@ -102,7 +104,9 @@ async function buildTrendRecommendation({ playerId, days, snapshot }) {
     headline: `${days}-day development recommendation`,
     summary: `Player ${playerId} shows strongest performance in ${strongest
       .map((item) => item.metric)
-      .join(', ')}. The next focus should be ${weakest.map((item) => item.metric).join(', ')}.`,
+      .join(
+        ', '
+      )}. The next focus should be ${weakest.map((item) => item.metric).join(', ')}.`,
     riskFlags: weakest.map((item) => ({
       metric: item.metric,
       severity: item.score < 4 ? 'high' : 'moderate',

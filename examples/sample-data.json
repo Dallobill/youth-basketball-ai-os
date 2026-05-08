@@ -2,25 +2,23 @@
   "organization": {
     "name": "Northeast Bucket Getters"
   },
-  "season": {
-    "name": "Spring-Summer 2026",
-    "startDate": "2026-03-01",
-    "endDate": "2026-07-31"
-  },
   "team": {
     "name": "NBG 15U",
     "ageGroup": "15U",
-    "level": "AAU"
+    "season": "Spring-Summer 2026",
+    "status": "active",
+    "notes": "AAU pilot team"
   },
   "player": {
     "firstName": "Jaylen",
     "lastName": "Smith",
+    "preferredName": "Jay",
     "graduationYear": 2029,
-    "position": "Guard",
+    "positionPrimary": "Guard",
     "jerseyNumber": "2",
-    "dominantHand": "Right",
-    "guardianName": "Michelle Smith",
-    "guardianEmail": "parent@example.com"
+    "dominantHand": "right",
+    "injuryStatus": "healthy",
+    "playerStatus": "active"
   },
   "evaluation": {
     "evaluationType": "game",
@@ -37,5 +35,26 @@
     "strengths": "Pressures the ball and competes.",
     "priorities": "Early help-side reads and better finishing balance.",
     "notes": "Late rotations on weak side. Rushed on two drives. Strong defensive energy."
+  },
+  "developmentEntry": {
+    "entryDate": "2026-05-08",
+    "entryType": "game",
+    "ballHandling": 6,
+    "finishing": 5,
+    "shooting": 6,
+    "passingDecision": 5,
+    "defenseOnBall": 8,
+    "defenseHelp": 5,
+    "rebounding": 4,
+    "communication": 6,
+    "motorEffort": 8,
+    "basketballIq": 5,
+    "confidence": 6,
+    "focus": 7,
+    "physicalReadiness": 8,
+    "strengths": "Pressures the ball and competes.",
+    "priorities": "Early help-side reads and better finishing balance.",
+    "coachNotes": "Strong defensive energy in the second half.",
+    "contextNotes": "Game evaluation from spring-summer pilot."
   }
 }
